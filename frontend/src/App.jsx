@@ -15,21 +15,64 @@ import SuiviChantier from "./SuiviChantier.jsx";
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const PRICES = {
-  FR:{beton:185,acier:1.4,par:1.8,cim:8.5,sable:42,grav:48,tole:18,tuile:28,tuile_pre:42,fen:280,cable:2.8,pvc:3.4,maçon:220,elec:250,plom:260,ing:420},
-  CH:{beton:260,acier:1.95,par:3.4,cim:12.5,sable:68,grav:75,tole:0,tuile:42,tuile_pre:56,fen:420,cable:4.2,pvc:4.9,maçon:380,elec:420,plom:440,ing:650},
-  CI:{beton:120,acier:1.05,par:0.95,cim:5.2,sable:24,grav:27,tole:11,tuile:18,tuile_pre:26,fen:145,cable:1.1,pvc:1.4,maçon:40,elec:55,plom:50,ing:120},
-  SN:{beton:115,acier:1.1,par:0.9,cim:5,sable:22,grav:25,tole:10,tuile:17,tuile_pre:24,fen:130,cable:1.0,pvc:1.3,maçon:35,elec:48,plom:45,ing:100},
-  MA:{beton:130,acier:1.2,par:1.1,cim:6,sable:28,grav:32,tole:13,tuile:20,tuile_pre:30,fen:190,cable:1.4,pvc:1.7,maçon:55,elec:70,plom:65,ing:140},
-  CA:{beton:200,acier:1.6,par:2.1,cim:10,sable:50,grav:55,tole:22,tuile:34,tuile_pre:50,fen:350,cable:3.2,pvc:4.0,maçon:280,elec:320,plom:330,ing:500},
+  FR:{beton:185,acier:1.4, par:1.80,cim:8.5, sable:42,grav:48,tole:18,tuile:28,tuile_pre:42,fen:280,cable:2.8, pvc:3.4, maçon:220,elec:250,plom:260,ing:420},
+  BE:{beton:170,acier:1.3, par:1.65,cim:7.8, sable:39,grav:44,tole:17,tuile:26,tuile_pre:39,fen:258,cable:2.6, pvc:3.1, maçon:202,elec:230,plom:239,ing:386},
+  PT:{beton:144,acier:1.1, par:1.40,cim:6.6, sable:33,grav:37,tole:14,tuile:22,tuile_pre:33,fen:218,cable:2.2, pvc:2.65,maçon:172,elec:195,plom:203,ing:328},
+  CH:{beton:260,acier:1.95,par:3.40,cim:12.5,sable:68,grav:75,tole:0, tuile:42,tuile_pre:56,fen:420,cable:4.2, pvc:4.9, maçon:380,elec:420,plom:440,ing:650},
+  GB:{beton:240,acier:1.82,par:2.34,cim:11.1,sable:55,grav:62,tole:23,tuile:36,tuile_pre:55,fen:364,cable:3.64,pvc:4.42,maçon:286,elec:325,plom:338,ing:546},
+  CA:{beton:200,acier:1.6, par:2.10,cim:10,  sable:50,grav:55,tole:22,tuile:34,tuile_pre:50,fen:350,cable:3.2, pvc:4.0, maçon:280,elec:320,plom:330,ing:500},
+  US:{beton:231,acier:1.75,par:2.25,cim:10.6,sable:53,grav:60,tole:23,tuile:35,tuile_pre:53,fen:350,cable:3.5, pvc:4.25,maçon:275,elec:313,plom:325,ing:525},
+  BR:{beton:115,acier:0.87,par:1.12,cim:5.3, sable:26,grav:30,tole:11,tuile:17,tuile_pre:26,fen:174,cable:1.74,pvc:2.11,maçon:136,elec:155,plom:161,ing:260},
+  MA:{beton:130,acier:1.2, par:1.10,cim:6,   sable:28,grav:32,tole:13,tuile:20,tuile_pre:30,fen:190,cable:1.4, pvc:1.7, maçon:55, elec:70, plom:65, ing:140},
+  TN:{beton:107,acier:0.81,par:1.04,cim:4.9, sable:24,grav:28,tole:10,tuile:16,tuile_pre:24,fen:162,cable:1.62,pvc:1.97,maçon:128,elec:145,plom:151,ing:244},
+  DZ:{beton:96, acier:0.73,par:0.94,cim:4.4, sable:22,grav:25,tole:9, tuile:15,tuile_pre:22,fen:146,cable:1.46,pvc:1.77,maçon:114,elec:130,plom:135,ing:218},
+  CI:{beton:120,acier:1.05,par:0.95,cim:5.2, sable:24,grav:27,tole:11,tuile:18,tuile_pre:26,fen:145,cable:1.1, pvc:1.4, maçon:40, elec:55, plom:50, ing:120},
+  SN:{beton:115,acier:1.1, par:0.90,cim:5,   sable:22,grav:25,tole:10,tuile:17,tuile_pre:24,fen:130,cable:1.0, pvc:1.3, maçon:35, elec:48, plom:45, ing:100},
+  NG:{beton:102,acier:0.77,par:0.99,cim:4.7, sable:23,grav:26,tole:10,tuile:15,tuile_pre:23,fen:154,cable:1.54,pvc:1.87,maçon:121,elec:138,plom:143,ing:231},
+  BF:{beton:83, acier:0.63,par:0.81,cim:3.8, sable:19,grav:22,tole:8, tuile:13,tuile_pre:19,fen:126,cable:1.26,pvc:1.53,maçon:99, elec:113,plom:117,ing:189},
+  ML:{beton:87, acier:0.66,par:0.85,cim:4.0, sable:20,grav:23,tole:8, tuile:13,tuile_pre:20,fen:132,cable:1.32,pvc:1.6, maçon:103,elec:118,plom:122,ing:197},
+  TG:{beton:93, acier:0.7, par:0.90,cim:4.3, sable:21,grav:24,tole:9, tuile:14,tuile_pre:21,fen:140,cable:1.4, pvc:1.7, maçon:110,elec:125,plom:130,ing:210},
+  BJ:{beton:96, acier:0.73,par:0.94,cim:4.4, sable:22,grav:25,tole:9, tuile:15,tuile_pre:22,fen:146,cable:1.46,pvc:1.77,maçon:114,elec:130,plom:135,ing:218},
+  GN:{beton:78, acier:0.59,par:0.76,cim:3.6, sable:18,grav:20,tole:8, tuile:12,tuile_pre:18,fen:118,cable:1.18,pvc:1.43,maçon:92, elec:105,plom:109,ing:176},
+  CM:{beton:107,acier:0.81,par:1.04,cim:4.9, sable:24,grav:28,tole:10,tuile:16,tuile_pre:24,fen:162,cable:1.62,pvc:1.97,maçon:128,elec:145,plom:151,ing:244},
+  CG:{beton:111,acier:0.84,par:1.08,cim:5.1, sable:25,grav:29,tole:11,tuile:17,tuile_pre:25,fen:168,cable:1.68,pvc:2.04,maçon:132,elec:150,plom:156,ing:252},
+  GA:{beton:126,acier:0.95,par:1.22,cim:5.8, sable:29,grav:33,tole:12,tuile:19,tuile_pre:29,fen:190,cable:1.9, pvc:2.31,maçon:150,elec:170,plom:177,ing:286},
 };
-const CUR = {FR:"€",CH:"CHF",CI:"FCFA",SN:"FCFA",MA:"MAD",CA:"CAD"};
+const CUR = {
+  FR:"€",  BE:"€",   PT:"€",    CH:"CHF", GB:"GBP",
+  CA:"CAD",US:"USD", BR:"BRL",
+  MA:"MAD",TN:"TND", DZ:"DZD",
+  CI:"FCFA",SN:"FCFA",NG:"NGN",BF:"FCFA",ML:"FCFA",TG:"FCFA",BJ:"FCFA",GN:"GNF",
+  CM:"FCFA",CG:"FCFA",GA:"FCFA",
+};
 const COUNTRIES = [
-  {code:"FR",flag:"🇫🇷",name:"France",cur:"EUR"},
-  {code:"CH",flag:"🇨🇭",name:"Suisse",cur:"CHF"},
-  {code:"CI",flag:"🇨🇮",name:"Côte d'Ivoire",cur:"XOF"},
-  {code:"SN",flag:"🇸🇳",name:"Sénégal",cur:"XOF"},
-  {code:"MA",flag:"🇲🇦",name:"Maroc",cur:"MAD"},
-  {code:"CA",flag:"🇨🇦",name:"Canada",cur:"CAD"},
+  // Europe
+  {code:"FR",flag:"🇫🇷",name:"France",        cur:"€"},
+  {code:"BE",flag:"🇧🇪",name:"Belgique",      cur:"€"},
+  {code:"PT",flag:"🇵🇹",name:"Portugal",      cur:"€"},
+  {code:"CH",flag:"🇨🇭",name:"Suisse",        cur:"CHF"},
+  {code:"GB",flag:"🇬🇧",name:"R.-Uni",        cur:"GBP"},
+  // Amérique
+  {code:"CA",flag:"🇨🇦",name:"Canada",        cur:"CAD"},
+  {code:"US",flag:"🇺🇸",name:"États-Unis",    cur:"USD"},
+  {code:"BR",flag:"🇧🇷",name:"Brésil",        cur:"BRL"},
+  // Afrique du Nord
+  {code:"MA",flag:"🇲🇦",name:"Maroc",         cur:"MAD"},
+  {code:"TN",flag:"🇹🇳",name:"Tunisie",       cur:"TND"},
+  {code:"DZ",flag:"🇩🇿",name:"Algérie",       cur:"DZD"},
+  // Afrique de l'Ouest
+  {code:"CI",flag:"🇨🇮",name:"Côte d'Ivoire", cur:"FCFA"},
+  {code:"SN",flag:"🇸🇳",name:"Sénégal",       cur:"FCFA"},
+  {code:"NG",flag:"🇳🇬",name:"Nigeria",       cur:"NGN"},
+  {code:"BF",flag:"🇧🇫",name:"Burkina Faso",  cur:"FCFA"},
+  {code:"ML",flag:"🇲🇱",name:"Mali",          cur:"FCFA"},
+  {code:"TG",flag:"🇹🇬",name:"Togo",          cur:"FCFA"},
+  {code:"BJ",flag:"🇧🇯",name:"Bénin",         cur:"FCFA"},
+  {code:"GN",flag:"🇬🇳",name:"Guinée",        cur:"GNF"},
+  // Afrique Centrale
+  {code:"CM",flag:"🇨🇲",name:"Cameroun",      cur:"FCFA"},
+  {code:"CG",flag:"🇨🇬",name:"Congo",         cur:"FCFA"},
+  {code:"GA",flag:"🇬🇦",name:"Gabon",         cur:"FCFA"},
 ];
 
 const css = `
