@@ -145,6 +145,37 @@ const CHANTIERS_BASE = [
   },
 ];
 
+// ── Liste des pays ────────────────────────────────────────────────────────────
+const PAYS_LIST = [
+  // Europe
+  { code: "FR", flag: "🇫🇷", name: "France",        cur: "€" },
+  { code: "BE", flag: "🇧🇪", name: "Belgique",      cur: "€" },
+  { code: "PT", flag: "🇵🇹", name: "Portugal",      cur: "€" },
+  { code: "CH", flag: "🇨🇭", name: "Suisse",        cur: "CHF" },
+  { code: "GB", flag: "🇬🇧", name: "R.-Uni",        cur: "GBP" },
+  // Amérique
+  { code: "CA", flag: "🇨🇦", name: "Canada",        cur: "CAD" },
+  { code: "US", flag: "🇺🇸", name: "États-Unis",    cur: "USD" },
+  { code: "BR", flag: "🇧🇷", name: "Brésil",        cur: "BRL" },
+  // Afrique du Nord
+  { code: "MA", flag: "🇲🇦", name: "Maroc",         cur: "MAD" },
+  { code: "TN", flag: "🇹🇳", name: "Tunisie",       cur: "TND" },
+  { code: "DZ", flag: "🇩🇿", name: "Algérie",       cur: "DZD" },
+  // Afrique de l'Ouest
+  { code: "CI", flag: "🇨🇮", name: "Côte d'Ivoire", cur: "FCFA" },
+  { code: "SN", flag: "🇸🇳", name: "Sénégal",       cur: "FCFA" },
+  { code: "NG", flag: "🇳🇬", name: "Nigeria",       cur: "NGN" },
+  { code: "BF", flag: "🇧🇫", name: "Burkina Faso",  cur: "FCFA" },
+  { code: "ML", flag: "🇲🇱", name: "Mali",          cur: "FCFA" },
+  { code: "TG", flag: "🇹🇬", name: "Togo",          cur: "FCFA" },
+  { code: "BJ", flag: "🇧🇯", name: "Bénin",         cur: "FCFA" },
+  { code: "GN", flag: "🇬🇳", name: "Guinée",        cur: "GNF" },
+  // Afrique Centrale
+  { code: "CM", flag: "🇨🇲", name: "Cameroun",      cur: "FCFA" },
+  { code: "CG", flag: "🇨🇬", name: "Congo",         cur: "FCFA" },
+  { code: "GA", flag: "🇬🇦", name: "Gabon",         cur: "FCFA" },
+];
+
 // ── Compteur animé ────────────────────────────────────────────────────────────
 function AnimatedNumber({ value, prefix = "", suffix = "", decimals = 0, duration = 900 }) {
   const [display, setDisplay] = useState(0);
@@ -329,6 +360,14 @@ export default function SimulateurEconomies({ setPage, t = (k) => k, lang = "fr"
     .archi-row.total{background:rgba(201,168,76,.06);font-weight:700;font-size:12px}
     .archi-row.savings{background:rgba(76,175,110,.06);color:var(--ok)}
     .ratio-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(201,168,76,.1);border:1px solid var(--gold3);border-radius:8px;padding:12px 16px;margin:10px 0}
+    .pays-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:7px;margin-top:10px;overflow:visible!important;max-height:none!important;height:auto!important}
+    .pays-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 5px;text-align:center;cursor:pointer;transition:all .2s}
+    .pays-card:hover{border-color:var(--gold3);background:rgba(201,168,76,.05)}
+    .pays-card.active{border-color:var(--gold);background:rgba(201,168,76,.09);box-shadow:0 0 0 1px var(--gold3)}
+    .pays-card-flag{font-size:18px;margin-bottom:2px}
+    .pays-card-name{font-size:9px;font-weight:600;color:var(--dim);line-height:1.2;word-break:break-word}
+    .pays-card.active .pays-card-name{color:var(--gold)}
+    .pays-card-cur{font-size:8px;color:var(--dim2);margin-top:1px}
   `;
 
   return (
@@ -348,57 +387,32 @@ export default function SimulateurEconomies({ setPage, t = (k) => k, lang = "fr"
         </div>
 
         {/* Paramètres */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          <div>
-            <label style={{ fontSize: 10, color: "var(--dim)", textTransform: "uppercase", letterSpacing: 1.5 }}>
-              {t("sim_surface")} ({ch.surface_min}–{ch.surface_max} {ch.unit.split(" ")[0]})
-            </label>
-            <div className="sim-slider-wrap" style={{ marginTop: 10 }}>
-              <input type="range" className="sim-slider"
-                min={ch.surface_min} max={ch.surface_max} step={ch.surface_step}
-                value={surface} onChange={e => setSurface(+e.target.value)}
-              />
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: 18, color: "var(--gold)", minWidth: 80, textAlign: "right" }}>
-                {surface} <span style={{ fontSize: 11 }}>{ch.unit.split(" ")[0]}</span>
-              </div>
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 10, color: "var(--dim)", textTransform: "uppercase", letterSpacing: 1.5 }}>
+            {t("sim_surface")} ({ch.surface_min}–{ch.surface_max} {ch.unit.split(" ")[0]})
+          </label>
+          <div className="sim-slider-wrap" style={{ marginTop: 10 }}>
+            <input type="range" className="sim-slider"
+              min={ch.surface_min} max={ch.surface_max} step={ch.surface_step}
+              value={surface} onChange={e => setSurface(+e.target.value)}
+            />
+            <div style={{ fontFamily: "'Cinzel',serif", fontSize: 18, color: "var(--gold)", minWidth: 80, textAlign: "right" }}>
+              {surface} <span style={{ fontSize: 11 }}>{ch.unit.split(" ")[0]}</span>
             </div>
           </div>
-          <div>
-            <label style={{ fontSize: 10, color: "var(--dim)", textTransform: "uppercase", letterSpacing: 1.5 }}>{t("sim_country")}</label>
-            <select value={pays} onChange={e => setPays(e.target.value)} style={{ marginTop: 10, width: "100%" }}>
-              <optgroup label="── Europe ──────────────">
-                <option value="FR">🇫🇷 France (€)</option>
-                <option value="BE">🇧🇪 Belgique (€)</option>
-                <option value="PT">🇵🇹 Portugal (€)</option>
-                <option value="CH">🇨🇭 Suisse (CHF)</option>
-                <option value="GB">🇬🇧 Royaume-Uni (GBP)</option>
-              </optgroup>
-              <optgroup label="── Amérique ────────────">
-                <option value="CA">🇨🇦 Canada (CAD)</option>
-                <option value="US">🇺🇸 États-Unis (USD)</option>
-                <option value="BR">🇧🇷 Brésil (BRL)</option>
-              </optgroup>
-              <optgroup label="── Afrique du Nord ─────">
-                <option value="MA">🇲🇦 Maroc (MAD)</option>
-                <option value="TN">🇹🇳 Tunisie (TND)</option>
-                <option value="DZ">🇩🇿 Algérie (DZD)</option>
-              </optgroup>
-              <optgroup label="── Afrique de l'Ouest ──">
-                <option value="CI">🇨🇮 Côte d'Ivoire (FCFA)</option>
-                <option value="SN">🇸🇳 Sénégal (FCFA)</option>
-                <option value="NG">🇳🇬 Nigeria (NGN)</option>
-                <option value="BF">🇧🇫 Burkina Faso (FCFA)</option>
-                <option value="ML">🇲🇱 Mali (FCFA)</option>
-                <option value="TG">🇹🇬 Togo (FCFA)</option>
-                <option value="BJ">🇧🇯 Bénin (FCFA)</option>
-                <option value="GN">🇬🇳 Guinée (GNF)</option>
-              </optgroup>
-              <optgroup label="── Afrique Centrale ────">
-                <option value="CM">🇨🇲 Cameroun (FCFA)</option>
-                <option value="CG">🇨🇬 Congo (FCFA)</option>
-                <option value="GA">🇬🇦 Gabon (FCFA)</option>
-              </optgroup>
-            </select>
+        </div>
+        <div style={{ overflow: "visible", height: "auto" }}>
+          <label style={{ fontSize: 10, color: "var(--dim)", textTransform: "uppercase", letterSpacing: 1.5 }}>{t("sim_country")}</label>
+          <div className="pays-grid" style={{ overflow: "visible", height: "auto", maxHeight: "none" }}>
+            {PAYS_LIST.map(p => (
+              <div key={p.code}
+                className={`pays-card${pays === p.code ? " active" : ""}`}
+                onClick={() => setPays(p.code)}>
+                <div className="pays-card-flag">{p.flag}</div>
+                <div className="pays-card-name">{p.name}</div>
+                <div className="pays-card-cur">{p.cur}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
