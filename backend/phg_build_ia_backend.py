@@ -45,26 +45,36 @@ stripe.api_key = STRIPE_SECRET_KEY
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./phg_build_ia.db")
 
+# Railway injecte parfois "postgres://" (préfixe déprecié dans SQLAlchemy 2.x).
+# On normalise vers "postgresql+psycopg2://" dans tous les cas.
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+elif DATABASE_URL.startswith("postgresql://") and "+psycopg2" not in DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 # Plans Stripe
 STRIPE_PLANS = {
     "PRO": {
         "name": "PHG BUILD IA PRO",
-        "price_euros": 5,
+        "price_euros": 12.90,
+        "price_annual_euros": 77,
         "description": "Accès Pro — estimations illimitées",
         "price_id": os.getenv("STRIPE_PRICE_PRO", "price_PRO_REPLACE"),
     },
     "ELITE": {
         "name": "PHG BUILD IA ELITE",
-        "price_euros": 20,
+        "price_euros": 25,
+        "price_annual_euros": 210,
         "description": "Accès Elite — tout inclus + support prioritaire",
         "price_id": os.getenv("STRIPE_PRICE_ELITE", "price_ELITE_REPLACE"),
     },
     "ELITE_AFRIQUE": {
         "name": "PHG BUILD IA ELITE Afrique",
-        "price_euros": 10,
-        "description": "Accès Elite Afrique — tarif diaspora résidente",
+        "price_euros": 17,
+        "price_annual_euros": 135,
+        "description": "Accès Elite Afrique — mêmes fonctionnalités qu'Elite, tarif réduit pour l'Afrique",
         "price_id": os.getenv("STRIPE_PRICE_ELITE_AFRIQUE", "price_ELITE_AF_REPLACE"),
     },
 }
@@ -72,10 +82,21 @@ STRIPE_PLANS = {
 # ─────────────────────────────────────────────
 # DATABASE
 # ─────────────────────────────────────────────
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
-)
+_is_sqlite = DATABASE_URL.startswith("sqlite")
+
+_engine_kwargs: dict = {}
+if _is_sqlite:
+    # SQLite : pas de pool, thread check désactivé pour FastAPI
+    _engine_kwargs["connect_args"] = {"check_same_thread": False}
+else:
+    # PostgreSQL : pool robuste pour Railway
+    _engine_kwargs["pool_pre_ping"] = True      # détecte les connexions mortes
+    _engine_kwargs["pool_size"] = 5             # connexions permanentes
+    _engine_kwargs["max_overflow"] = 10         # connexions supplémentaires si besoin
+    _engine_kwargs["pool_timeout"] = 30         # secondes avant TimeoutError
+    _engine_kwargs["pool_recycle"] = 1800       # recycle les connexions toutes les 30 min
+
+engine = create_engine(DATABASE_URL, **_engine_kwargs)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -1516,23 +1537,13 @@ def compute_estimation(
 # ─────────────────────────────────────────────
 # APP
 # ─────────────────────────────────────────────
-app = FastAPI(
-    title="PHG BUILD IA API",
-    description="Plateforme de construction intelligente pour la diaspora africaine francophone",
-    version="1.0.0",
-)
+from contextlib import asynccontextmanager
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],   # restreindre en prod
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-@app.on_event("startup")
-def startup():
+@asynccontextmanager
+async def lifespan(app):
+    # ── Démarrage ──────────────────────────────
+    # create_all est idempotent : crée uniquement les tables absentes.
+    # En production avec Alembic, alembic upgrade head prend le relais.
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
@@ -1540,6 +1551,32 @@ def startup():
         seed_suppliers(db)
     finally:
         db.close()
+    yield
+    # ── Arrêt ──────────────────────────────────
+    engine.dispose()
+
+app = FastAPI(
+    title="PHG BUILD IA API",
+    description="Plateforme de construction intelligente pour la diaspora africaine francophone",
+    version="2.0.0",
+    lifespan=lifespan,
+)
+
+_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    FRONTEND_URL,
+    *([o for o in os.getenv("EXTRA_CORS_ORIGINS", "").split(",") if o]),
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_ALLOWED_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # ─────────────────────────────────────────────

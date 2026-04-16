@@ -11,9 +11,8 @@ import DiagnosticRestauration from "./DiagnosticRestauration.jsx";
 import RapportPDF from "./RapportPDF.jsx";
 import SuiviChantier from "./SuiviChantier.jsx";
 
-// ── PHG BUILD IA — App complète avec plans Gratuit / Pro 12,90€ / Elite 25€ (Afrique 17€)
-// Connecter à l'API : remplacer la constante API par votre URL backend
-const API = "http://localhost:8000";
+// ── PHG BUILD IA — App complète avec plans Gratuit / Pro 12,90€/mois (77€/an) / Elite 25€/mois (210€/an) / Afrique 17€/mois (135€/an)
+const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const PRICES = {
   FR:{beton:185,acier:1.4,par:1.8,cim:8.5,sable:42,grav:48,tole:18,tuile:28,tuile_pre:42,fen:280,cable:2.8,pvc:3.4,maçon:220,elec:250,plom:260,ing:420},
@@ -480,6 +479,28 @@ export default function App() {
                   <div style={{ fontFamily: "'Cinzel',serif", fontSize: 22, color: "var(--gold)", letterSpacing: 3, marginBottom: 5 }}>PHG BUILD IA</div>
                   <div style={{ fontSize: 12, color: "var(--dim)", marginBottom: 12 }}>{t("acc_subtitle")}</div>
                   <div style={{ fontSize: 11, color: "var(--dim2)", maxWidth: 460, margin: "0 auto", lineHeight: 1.8 }}>{t("acc_desc")}</div>
+                  <div style={{ marginTop: 18 }}>
+                    <a
+                      href="/Guide_PHG_BUILD_IA.pdf"
+                      download="Guide_PHG_BUILD_IA.pdf"
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: 8,
+                        padding: "10px 22px", borderRadius: "var(--r)",
+                        background: "transparent",
+                        border: "1px solid var(--gold3)",
+                        color: "var(--gold)",
+                        fontSize: 12, fontWeight: 600,
+                        fontFamily: "'Montserrat',sans-serif",
+                        letterSpacing: ".4px",
+                        textDecoration: "none",
+                        transition: "all .15s",
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(201,168,76,.1)"; e.currentTarget.style.borderColor = "var(--gold)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "var(--gold3)"; }}
+                    >
+                      📥 Télécharger le guide gratuit
+                    </a>
+                  </div>
                 </div>
 
                 {/* ── Toggle mensuel / annuel ── */}
@@ -530,12 +551,12 @@ export default function App() {
                           <div className="plan-icon">🏆</div>
                           <div className="plan-name">Pro</div>
                           {annual
-                            ? <div><span className="plan-amount" style={{ fontSize: 22 }}>77,50</span><span className="plan-period"> €/an · 6,46€/mois</span></div>
+                            ? <div><span className="plan-amount" style={{ fontSize: 22 }}>77</span><span className="plan-period"> €/an · 6,42€/mois</span></div>
                             : <div><span className="plan-amount">12,90</span><span className="plan-period"> €/mois</span></div>
                           }
                           {annual
                             ? <div className="plan-africa" style={{ color: "var(--ok)", fontWeight: 700 }}>{t("plan_months2")}</div>
-                            : <div className="plan-africa">ou <strong style={{ color: "var(--gold)" }}>77,50€/an</strong> · {t("plan_months2")}</div>
+                            : <div className="plan-africa">ou <strong style={{ color: "var(--gold)" }}>77€/an</strong> · {t("plan_months2")}</div>
                           }
                           <ul className="plan-feats">
                             <li><span className="fok">✓</span>{t("f_pro_1")}</li>
@@ -546,7 +567,7 @@ export default function App() {
                             <li><span className="fok">✓</span>{t("f_pro_6")}</li>
                           </ul>
                           <button className="btn btn-gold btn-sm btn-block" onClick={() => activatePlan(annual ? "pro-annual" : "pro")}>
-                            {t("btn_activate_pro")} — {annual ? "77,50€/an" : "12,90€/mois"}
+                            {t("btn_activate_pro")} — {annual ? "77€/an" : "12,90€/mois"}
                           </button>
                         </div>
 
@@ -584,7 +605,7 @@ export default function App() {
                       {/* Bandeau économies annuelles */}
                       {annual && (
                         <div style={{ background: "rgba(76,175,110,.05)", border: "1px solid rgba(76,175,110,.2)", borderRadius: "var(--r2)", padding: "10px 16px", marginTop: 12, display: "flex", gap: 24, justifyContent: "center", flexWrap: "wrap" }}>
-                          {[["Pro", 12.90, 77.50], ["Élite", 25, 210]].map(([name, mo, yr]) => (
+                          {[["Pro", 12.90, 77], ["Élite", 25, 210]].map(([name, mo, yr]) => (
                             <div key={name} style={{ textAlign: "center" }}>
                               <div style={{ fontSize: 10, color: "var(--dim)", letterSpacing: 1 }}>{name} {t("annual_label")}</div>
                               <div style={{ fontSize: 12, marginTop: 2 }}>
@@ -1045,7 +1066,7 @@ export default function App() {
                   btns: [{ l: t("btn_stay_free"), cls: "btn-out", p: "free" }],
                 },
                 {
-                  k: "pro", name: "Pro", icon: "◆", monthly: 12.90, annual: 77.50, annualBadge: t("plan_months2"), chip: t("plan_popular"), featured: true,
+                  k: "pro", name: "Pro", icon: "◆", monthly: 12.90, annual: 77, annualBadge: t("plan_months2"), chip: t("plan_popular"), featured: true,
                   feats: [t("f_pro_1"), t("f_pro_2"), t("f_pro_4"), t("f_free_6"), t("f_pro_3"), t("f_pro_5"), t("f_pro_6"), `✗ ${t("f_el_4")}`],
                   btns: [{ l: t("btn_activate_pro"), cls: "btn-gold", p: "pro" }],
                 },
@@ -1117,7 +1138,7 @@ export default function App() {
 
                   {annual && (
                     <div style={{ background: "rgba(76,175,110,.05)", border: "1px solid rgba(76,175,110,.2)", borderRadius: "var(--r2)", padding: "10px 16px", marginTop: 12, display: "flex", gap: 24, justifyContent: "center", flexWrap: "wrap" }}>
-                      {[["Pro", 12.90, 77.50], ["Élite", 25, 210]].map(([name, mo, yr]) => (
+                      {[["Pro", 12.90, 77], ["Élite", 25, 210]].map(([name, mo, yr]) => (
                         <div key={name} style={{ textAlign: "center" }}>
                           <div style={{ fontSize: 10, color: "var(--dim)", letterSpacing: 1 }}>{name} {t("annual_label")}</div>
                           <div style={{ fontSize: 12, marginTop: 2 }}>
