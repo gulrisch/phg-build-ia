@@ -1565,6 +1565,7 @@ app = FastAPI(
 _ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
+    "https://frontend-goulia-s-projects.vercel.app",
     FRONTEND_URL,
     *([o for o in os.getenv("EXTRA_CORS_ORIGINS", "").split(",") if o]),
 ]
