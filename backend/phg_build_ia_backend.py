@@ -1579,6 +1579,25 @@ app.add_middleware(
 )
 
 
+# ── Handler global : ajoute les headers CORS même sur les erreurs 500
+# Sans ça, le navigateur affiche "CORS blocked" à la place du vrai message d'erreur
+from fastapi.responses import JSONResponse
+from starlette.requests import Request as StarletteRequest
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: StarletteRequest, exc: Exception):
+    origin = request.headers.get("origin", "")
+    headers = {}
+    if origin in _ALLOWED_ORIGINS:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc)},
+        headers=headers,
+    )
+
+
 # ─────────────────────────────────────────────
 # ROUTES AUTH
 # ─────────────────────────────────────────────
