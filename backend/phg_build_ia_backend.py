@@ -2075,7 +2075,18 @@ def create_client(current_user: User = Depends(get_current_user)):
 # ─────────────────────────────────────────────
 @app.get("/health", tags=["System"])
 def health():
+    """Healthcheck léger — pas de connexion DB, répond toujours 200."""
     return {"status": "ok", "service": "PHG BUILD IA API", "version": "2.0.0"}
+
+
+@app.get("/health/db", tags=["System"])
+def health_db(db: Session = Depends(get_db)):
+    """Healthcheck DB — vérifie la connexion PostgreSQL."""
+    try:
+        db.execute(__import__("sqlalchemy").text("SELECT 1"))
+        return {"status": "ok", "db": "connected"}
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"DB error: {str(e)}")
 
 
 # ─────────────────────────────────────────────
