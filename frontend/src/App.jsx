@@ -246,6 +246,70 @@ export default function App() {
   const [demoMode, setDemoMode] = useState(false);
   const plan = demoMode ? "elite" : planReal;
 
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("phg_user")); } catch { return null; }
+  });
+  const [authModal, setAuthModal] = useState(false);   // true = ouvert
+  const [authTab, setAuthTab]     = useState("login"); // "login" | "register"
+  const [authForm, setAuthForm]   = useState({ email: "", password: "", full_name: "" });
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError]     = useState("");
+
+  const saveSession = (token, userData) => {
+    localStorage.setItem("phg_token", token);
+    localStorage.setItem("phg_user",  JSON.stringify(userData));
+    setUser(userData);
+    setAuthModal(false);
+    setAuthError("");
+  };
+
+  const logout = () => {
+    localStorage.removeItem("phg_token");
+    localStorage.removeItem("phg_user");
+    setUser(null);
+    setPlan("free");
+  };
+
+  const submitAuth = async (e) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError("");
+    try {
+      if (authTab === "register") {
+        const res = await fetch(`${API}/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: authForm.email, password: authForm.password, full_name: authForm.full_name }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Erreur inscription");
+        saveSession(data.access_token, data.user || { email: authForm.email, full_name: authForm.full_name });
+      } else {
+        const form = new URLSearchParams();
+        form.append("username", authForm.email);
+        form.append("password", authForm.password);
+        const res = await fetch(`${API}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: form,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Email ou mot de passe incorrect");
+        // Récupérer le profil
+        const meRes = await fetch(`${API}/auth/me`, {
+          headers: { "Authorization": `Bearer ${data.access_token}` },
+        });
+        const me = meRes.ok ? await meRes.json() : { email: authForm.email };
+        saveSession(data.access_token, me);
+      }
+    } catch (err) {
+      setAuthError(err.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   // ── Langue / i18n ──────────────────────────────────────────────────────────
   const [lang, setLang] = useState(() => localStorage.getItem("phg_lang") || "fr");
   const t = createT(lang);
@@ -550,6 +614,19 @@ export default function App() {
             <div className="tb-btns">
               <button className="btn btn-out btn-sm" onClick={() => setPage("analyse")}>{t("btn_analyse")}</button>
               <button className="btn btn-gold btn-sm" onClick={() => { setPage("maison"); setStep(1); setMResult(null); }}>{t("btn_new_proj")}</button>
+              {user ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 4 }}>
+                  <span style={{ fontSize: 10, color: "var(--gold)", fontWeight: 600, maxWidth: 110, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    👤 {user.full_name || user.email}
+                  </span>
+                  <button className="btn btn-out btn-sm" onClick={logout} style={{ fontSize: 10 }}>Déconnexion</button>
+                </div>
+              ) : (
+                <button className="btn btn-gold btn-sm" onClick={() => { setAuthModal(true); setAuthTab("login"); setAuthError(""); }}
+                  style={{ marginLeft: 4 }}>
+                  🔑 Connexion
+                </button>
+              )}
             </div>
           </div>
           <div className="content">
@@ -1256,6 +1333,74 @@ export default function App() {
           </div>
         </div>
       </div>
+
+      {/* ── Modal Auth ── */}
+      {authModal && (
+        <div onClick={() => setAuthModal(false)} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,.75)", zIndex: 1000,
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 14,
+            padding: 28, width: "100%", maxWidth: 380,
+          }}>
+            {/* Titre */}
+            <div style={{ fontFamily: "'Cinzel',serif", fontSize: 15, color: "var(--gold)", textAlign: "center", marginBottom: 20, letterSpacing: 1.5 }}>
+              𓂀 PHG BUILD IA
+            </div>
+
+            {/* Tabs */}
+            <div style={{ display: "flex", background: "var(--panel2)", borderRadius: 8, overflow: "hidden", marginBottom: 20, border: "1px solid var(--border)" }}>
+              {[["login","Connexion"],["register","Créer un compte"]].map(([tab, label]) => (
+                <button key={tab} onClick={() => { setAuthTab(tab); setAuthError(""); }}
+                  style={{ flex: 1, padding: "9px 0", fontSize: 11, fontWeight: 600, cursor: "pointer", border: "none",
+                    fontFamily: "'Montserrat',sans-serif", letterSpacing: .3,
+                    background: authTab === tab ? "var(--gold)" : "transparent",
+                    color: authTab === tab ? "#0A0A0A" : "var(--dim)" }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Formulaire */}
+            <form onSubmit={submitAuth}>
+              {authTab === "register" && (
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 10, color: "var(--dim)", textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 5 }}>Nom complet</label>
+                  <input type="text" required placeholder="Jean Dupont" value={authForm.full_name}
+                    onChange={e => setAuthForm(f => ({ ...f, full_name: e.target.value }))} />
+                </div>
+              )}
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 10, color: "var(--dim)", textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 5 }}>Email</label>
+                <input type="email" required placeholder="vous@email.com" value={authForm.email}
+                  onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))} />
+              </div>
+              <div style={{ marginBottom: 18 }}>
+                <label style={{ fontSize: 10, color: "var(--dim)", textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 5 }}>Mot de passe</label>
+                <input type="password" required placeholder="••••••••" value={authForm.password}
+                  onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))} />
+              </div>
+
+              {authError && (
+                <div style={{ background: "rgba(201,76,76,.1)", border: "1px solid rgba(201,76,76,.3)", borderRadius: 6, padding: "8px 12px", fontSize: 11, color: "var(--err)", marginBottom: 14 }}>
+                  {authError}
+                </div>
+              )}
+
+              <button type="submit" className="btn btn-gold btn-block" disabled={authLoading}
+                style={{ padding: "11px 0", fontSize: 13 }}>
+                {authLoading ? "⏳ Chargement…" : authTab === "login" ? "Se connecter" : "Créer mon compte"}
+              </button>
+            </form>
+
+            <button onClick={() => setAuthModal(false)} style={{
+              display: "block", margin: "14px auto 0", background: "none", border: "none",
+              color: "var(--dim2)", fontSize: 11, cursor: "pointer",
+            }}>Annuler</button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
