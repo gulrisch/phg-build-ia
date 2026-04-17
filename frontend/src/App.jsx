@@ -253,8 +253,16 @@ export default function App() {
   const [authModal, setAuthModal] = useState(false);   // true = ouvert
   const [authTab, setAuthTab]     = useState("login"); // "login" | "register"
   const [authForm, setAuthForm]   = useState({ email: "", password: "", full_name: "" });
-  const [authLoading, setAuthLoading] = useState(false);
-  const [authError, setAuthError]     = useState("");
+  const [authLoading, setAuthLoading]   = useState(false);
+  const [authError, setAuthError]       = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  const generatePassword = () => {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    const pwd = Array.from({ length: 16 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    setAuthForm(f => ({ ...f, password: pwd }));
+    setShowPassword(true);
+  };
 
   const saveSession = (token, userData) => {
     localStorage.setItem("phg_token", token);
@@ -622,7 +630,7 @@ export default function App() {
                   <button className="btn btn-out btn-sm" onClick={logout} style={{ fontSize: 10 }}>Déconnexion</button>
                 </div>
               ) : (
-                <button className="btn btn-gold btn-sm" onClick={() => { setAuthModal(true); setAuthTab("login"); setAuthError(""); }}
+                <button className="btn btn-gold btn-sm" onClick={() => { setAuthModal(true); setAuthTab("login"); setAuthError(""); setShowPassword(false); setAuthForm({ email: "", password: "", full_name: "" }); }}
                   style={{ marginLeft: 4 }}>
                   🔑 Connexion
                 </button>
@@ -1352,7 +1360,7 @@ export default function App() {
             {/* Tabs */}
             <div style={{ display: "flex", background: "var(--panel2)", borderRadius: 8, overflow: "hidden", marginBottom: 20, border: "1px solid var(--border)" }}>
               {[["login","Connexion"],["register","Créer un compte"]].map(([tab, label]) => (
-                <button key={tab} onClick={() => { setAuthTab(tab); setAuthError(""); }}
+                <button key={tab} onClick={() => { setAuthTab(tab); setAuthError(""); setShowPassword(false); }}
                   style={{ flex: 1, padding: "9px 0", fontSize: 11, fontWeight: 600, cursor: "pointer", border: "none",
                     fontFamily: "'Montserrat',sans-serif", letterSpacing: .3,
                     background: authTab === tab ? "var(--gold)" : "transparent",
@@ -1377,9 +1385,47 @@ export default function App() {
                   onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))} />
               </div>
               <div style={{ marginBottom: 18 }}>
-                <label style={{ fontSize: 10, color: "var(--dim)", textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 5 }}>Mot de passe</label>
-                <input type="password" required placeholder="••••••••" value={authForm.password}
-                  onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))} />
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+                  <label style={{ fontSize: 10, color: "var(--dim)", textTransform: "uppercase", letterSpacing: 1 }}>Mot de passe</label>
+                  {authTab === "register" && (
+                    <button type="button" onClick={generatePassword}
+                      style={{ fontSize: 10, background: "rgba(201,168,76,.1)", border: "1px solid var(--gold3)", borderRadius: 5, padding: "2px 8px", color: "var(--gold)", cursor: "pointer", fontFamily: "'Montserrat',sans-serif" }}>
+                      ⚡ Générer
+                    </button>
+                  )}
+                </div>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required placeholder="••••••••"
+                    value={authForm.password}
+                    onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))}
+                    style={{ paddingRight: 38 }}
+                  />
+                  <button type="button" onClick={() => setShowPassword(v => !v)}
+                    title={showPassword ? "Masquer" : "Afficher"}
+                    style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 15, color: "var(--dim)", lineHeight: 1 }}>
+                    {showPassword ? "🙈" : "👁"}
+                  </button>
+                </div>
+                {authTab === "register" && authForm.password && (
+                  <div style={{ marginTop: 5, display: "flex", gap: 4 }}>
+                    {["length","upper","number","special"].map(rule => {
+                      const ok = rule === "length" ? authForm.password.length >= 8
+                               : rule === "upper"  ? /[A-Z]/.test(authForm.password)
+                               : rule === "number" ? /[0-9]/.test(authForm.password)
+                               : /[^a-zA-Z0-9]/.test(authForm.password);
+                      const label = rule === "length" ? "8 car." : rule === "upper" ? "Maj." : rule === "number" ? "Chiffre" : "Symbole";
+                      return (
+                        <span key={rule} style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4,
+                          background: ok ? "rgba(76,175,110,.12)" : "rgba(255,255,255,.04)",
+                          color: ok ? "var(--ok)" : "var(--dim2)", border: `1px solid ${ok ? "rgba(76,175,110,.25)" : "var(--border)"}` }}>
+                          {ok ? "✓" : "·"} {label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {authError && (
