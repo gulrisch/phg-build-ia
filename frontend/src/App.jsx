@@ -286,10 +286,50 @@ export default function App() {
     { id: 3, name: "Maison Lyon", type: "house", country: "🇫🇷", qual: "std", cost: null, status: "draft" },
   ]);
 
-  const activatePlan = (p) => {
-    setPlan(p);
-    const labels = { free: "Gratuit", pro: "PRO — 12,90€/mois", elite: "ÉLITE — 25€/mois", "elite-africa": "ÉLITE AFRIQUE — 17€/mois" };
-    alert(`✓ Plan activé : ${labels[p]}\n\n(Dans l'app réelle, le paiement Stripe s'ouvre ici.)`);
+  const [checkoutLoading, setCheckoutLoading] = useState(null); // plan key en cours
+
+  // Mapping bouton → clé plan backend
+  const PLAN_KEY = {
+    "pro":           "PRO",
+    "pro-annual":    "PRO",
+    "elite":         "ELITE",
+    "elite-annual":  "ELITE",
+    "elite-africa":  "ELITE_AFRIQUE",
+  };
+
+  const activatePlan = async (p) => {
+    const planKey = PLAN_KEY[p];
+    if (!planKey) return;
+
+    const token = localStorage.getItem("phg_token");
+    if (!token) {
+      alert("Connectez-vous d'abord pour souscrire à un plan.");
+      return;
+    }
+
+    setCheckoutLoading(p);
+    try {
+      const res = await fetch(`${API}/stripe/checkout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ plan: planKey }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `Erreur ${res.status}`);
+      }
+
+      const { checkout_url } = await res.json();
+      window.location.href = checkout_url;
+    } catch (e) {
+      alert(`Erreur paiement : ${e.message}`);
+    } finally {
+      setCheckoutLoading(null);
+    }
   };
 
   const computeMaison = useCallback(() => {
@@ -609,8 +649,12 @@ export default function App() {
                             <li><span className="fok">✓</span>{t("f_pro_5")}</li>
                             <li><span className="fok">✓</span>{t("f_pro_6")}</li>
                           </ul>
-                          <button className="btn btn-gold btn-sm btn-block" onClick={() => activatePlan(annual ? "pro-annual" : "pro")}>
-                            {t("btn_activate_pro")} — {annual ? "77€/an" : "12,90€/mois"}
+                          <button className="btn btn-gold btn-sm btn-block"
+                            disabled={!!checkoutLoading}
+                            onClick={() => activatePlan(annual ? "pro-annual" : "pro")}>
+                            {checkoutLoading === (annual ? "pro-annual" : "pro")
+                              ? "⏳ Redirection…"
+                              : `${t("btn_activate_pro")} — ${annual ? "77€/an" : "12,90€/mois"}`}
                           </button>
                         </div>
 
@@ -635,11 +679,19 @@ export default function App() {
                             <li><span className="fok">✓</span>{t("f_el_6")}</li>
                           </ul>
                           <div style={{ display: "flex", gap: 6 }}>
-                            <button className="btn btn-out btn-sm" style={{ flex: 1 }} onClick={() => activatePlan(annual ? "elite-annual" : "elite")}>
-                              {annual ? "210€/an" : t("btn_europe")}
+                            <button className="btn btn-out btn-sm" style={{ flex: 1 }}
+                              disabled={!!checkoutLoading}
+                              onClick={() => activatePlan(annual ? "elite-annual" : "elite")}>
+                              {checkoutLoading === (annual ? "elite-annual" : "elite")
+                                ? "⏳ Redirection…"
+                                : annual ? "210€/an" : t("btn_europe")}
                             </button>
-                            <button className="btn btn-gold btn-sm" style={{ flex: 1 }} onClick={() => activatePlan("elite-africa")}>
-                              {t("btn_africa")} {annual ? "135€/an" : "17€/mois"}
+                            <button className="btn btn-gold btn-sm" style={{ flex: 1 }}
+                              disabled={!!checkoutLoading}
+                              onClick={() => activatePlan("elite-africa")}>
+                              {checkoutLoading === "elite-africa"
+                                ? "⏳ Redirection…"
+                                : `${t("btn_africa")} ${annual ? "135€/an" : "17€/mois"}`}
                             </button>
                           </div>
                         </div>
