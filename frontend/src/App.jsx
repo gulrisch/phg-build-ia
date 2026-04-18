@@ -370,6 +370,7 @@ export default function App() {
           headers: { "Authorization": `Bearer ${data.access_token}` },
         });
         const me = meRes.ok ? await meRes.json() : { email: authForm.email };
+        localStorage.setItem("phg_token", data.access_token);
         saveSession(data.access_token, me);
       }
     } catch (err) {
