@@ -461,8 +461,9 @@ export default function App() {
 
       if (res.status === 401) {
         logout();
+        setPage("accueil");
         setAuthModal(true); setAuthTab("login");
-        setAuthError("Session expirée. Reconnectez-vous pour continuer.");
+        setAuthError("Session expirée, reconnectez-vous.");
         return;
       }
 
