@@ -325,6 +325,11 @@ export default function App() {
     setUser(userData);
     setAuthModal(false);
     setAuthError("");
+    if (pendingPlan) {
+      const p = pendingPlan;
+      setPendingPlan(null);
+      setTimeout(() => activatePlan(p), 0);
+    }
   };
 
   const logout = () => {
@@ -332,6 +337,7 @@ export default function App() {
     localStorage.removeItem("phg_user");
     setUser(null);
     setPlan("free");
+    setPendingPlan(null);
   };
 
   const submitAuth = async (e) => {
@@ -427,6 +433,7 @@ export default function App() {
   ]);
 
   const [checkoutLoading, setCheckoutLoading] = useState(null); // plan key en cours
+  const [pendingPlan, setPendingPlan] = useState(null); // plan à activer après login
 
   // Mapping bouton → clé plan backend
   const PLAN_KEY = {
@@ -443,6 +450,7 @@ export default function App() {
 
     const token = localStorage.getItem("phg_token");
     if (!token) {
+      setPendingPlan(p);
       setAuthModal(true); setAuthTab("login");
       setAuthError("Connectez-vous pour souscrire à un plan.");
       return;
