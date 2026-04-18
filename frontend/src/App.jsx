@@ -305,6 +305,7 @@ export default function App() {
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem("phg_user")); } catch { return null; }
   });
+  const [token, setToken] = useState(() => localStorage.getItem("phg_token") || null);
   const [authModal, setAuthModal] = useState(false);   // true = ouvert
   const [authTab, setAuthTab]     = useState("login"); // "login" | "register"
   const [authForm, setAuthForm]   = useState({ email: "", password: "", full_name: "" });
@@ -322,6 +323,7 @@ export default function App() {
   const saveSession = (token, userData) => {
     localStorage.setItem("phg_token", token);
     localStorage.setItem("phg_user",  JSON.stringify(userData));
+    setToken(token);
     setUser(userData);
     setAuthModal(false);
     setAuthError("");
@@ -335,6 +337,7 @@ export default function App() {
   const logout = () => {
     localStorage.removeItem("phg_token");
     localStorage.removeItem("phg_user");
+    setToken(null);
     setUser(null);
     setPlan("free");
     setPendingPlan(null);
