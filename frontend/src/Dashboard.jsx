@@ -192,6 +192,41 @@ const css = `
     .form-grid { grid-template-columns: 1fr; }
     .scorecard-row { grid-template-columns: 1fr 1fr; }
   }
+
+  /* ── Hamburger Dashboard ── */
+  .dash-hamburger { display:none; background:none; border:none; color:var(--text); font-size:22px; cursor:pointer; padding:4px 6px; line-height:1; border-radius:var(--radius); transition:background .15s; }
+  .dash-hamburger:hover { background:rgba(201,168,76,.1); }
+  .dash-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:98; display:none; }
+
+  @media (max-width: 768px) {
+    .sidebar { position:fixed; left:-260px; top:0; bottom:0; z-index:99; width:250px; height:100vh; min-height:unset; overflow-y:auto; transition:left .25s cubic-bezier(.4,0,.2,1); }
+    .sidebar.open { left:0; box-shadow:4px 0 32px rgba(0,0,0,.8); }
+    .dash-overlay { display:block; }
+    .dash-hamburger { display:block; }
+    .main { margin-left:0; width:100%; }
+    .topbar { padding:0 10px; height:50px; }
+    .topbar-title { font-size:12px; letter-spacing:1px; }
+    .topbar-actions { gap:6px; }
+    .topbar-actions .btn { padding:6px 10px; font-size:10px; min-height:34px; }
+    .content { padding:12px; }
+    .kpi-row { grid-template-columns:1fr 1fr; gap:10px; }
+    .kpi-value { font-size:20px; }
+    .form-grid { grid-template-columns:1fr; }
+    .modal { width:calc(100vw - 24px); padding:18px; }
+    table { font-size:12px; }
+    th, td { padding:8px 10px; }
+    .tabs { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .tab { white-space:nowrap; padding:8px 14px; font-size:11px; }
+    .btn { min-height:40px; }
+    .btn-sm { min-height:34px; }
+  }
+
+  @media (max-width: 480px) {
+    .kpi-row { grid-template-columns:1fr 1fr; gap:8px; }
+    .kpi-value { font-size:18px; }
+    .topbar-title { display:none; }
+    .modal { width:calc(100vw - 16px); padding:14px; }
+  }
 `;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -226,7 +261,7 @@ function scoreColor(n) {
 }
 
 // ── Sidebar Component ─────────────────────────────────────────────────────────
-function Sidebar({ page, setPage }) {
+function Sidebar({ page, setPage, sidebarOpen }) {
   const nav = [
     { section: "Tableau de bord" },
     { id: "dashboard", icon: "◈", label: "Vue d'ensemble" },
@@ -240,7 +275,7 @@ function Sidebar({ page, setPage }) {
     { id: "subscriptions", icon: "◆", label: "Abonnements" },
   ];
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${sidebarOpen ? " open" : ""}`}>
       <div className="sidebar-logo">
         <div className="glyph">𓂀</div>
         <div className="brand">PHG BUILD IA</div>
@@ -804,6 +839,7 @@ export default function App() {
   const [page, setPage] = useState("dashboard");
   const [showNewProject, setShowNewProject] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleNewCreated = () => {
     setShowNewProject(false);
@@ -811,7 +847,8 @@ export default function App() {
     setRefreshKey(k => k + 1);
   };
 
-  const goNewProject = () => { setShowNewProject(true); setPage("projects"); };
+  const goNewProject = () => { setShowNewProject(true); setPage("projects"); setSidebarOpen(false); };
+  const navigate = (p) => { setPage(p); setSidebarOpen(false); };
 
   const renderPage = () => {
     switch (page) {
@@ -830,9 +867,11 @@ export default function App() {
     <>
       <style>{css}</style>
       <div className="app">
-        <Sidebar page={page} setPage={setPage} />
+        {sidebarOpen && <div className="dash-overlay" onClick={() => setSidebarOpen(false)} />}
+        <Sidebar page={page} setPage={navigate} sidebarOpen={sidebarOpen} />
         <div className="main">
           <div className="topbar">
+            <button className="dash-hamburger" onClick={() => setSidebarOpen(v => !v)} aria-label="Menu">☰</button>
             <div className="topbar-title">{PAGE_TITLES[page] || "PHG BUILD IA"}</div>
             <div className="topbar-actions">
               <button className="btn btn-outline btn-sm" onClick={() => api("/health").then(() => alert("✅ API connectée")).catch(() => alert("❌ API non joignable"))}>

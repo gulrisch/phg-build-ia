@@ -225,6 +225,59 @@ textarea{resize:vertical;min-height:60px}
 [dir="rtl"] .note{border-left:none;border-right:3px solid var(--gold3)}
 [dir="rtl"] .card-title{text-align:right}
 [dir="rtl"] .content{direction:rtl}
+
+/* ── Hamburger ── */
+.hamburger{display:none;background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px 6px;line-height:1;border-radius:var(--r);transition:background .15s}
+.hamburger:hover{background:rgba(201,168,76,.1)}
+.sb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:98;display:none}
+
+/* ── Responsive Mobile ── */
+@media(max-width:768px){
+  .sb{position:fixed;left:-270px;top:0;bottom:0;z-index:99;width:260px;height:100vh;min-height:unset;overflow-y:auto;transition:left .25s cubic-bezier(.4,0,.2,1)}
+  .sb.open{left:0;box-shadow:4px 0 32px rgba(0,0,0,.8)}
+  .sb-overlay{display:block}
+  .hamburger{display:block}
+  .main{width:100%;min-width:0}
+  .topbar{padding:0 10px;height:48px}
+  .tb-title{font-size:11px;letter-spacing:1px}
+  .tb-btns{gap:4px}
+  .tb-btns .btn{padding:6px 10px;font-size:10px;min-height:34px}
+  .content{padding:10px}
+  .kpi-row{grid-template-columns:1fr 1fr;gap:8px}
+  .kpi-val{font-size:16px}
+  .kpi-lbl{font-size:8px}
+  .fg2{grid-template-columns:1fr}
+  .fg3{grid-template-columns:1fr 1fr}
+  .cnt-grid{grid-template-columns:repeat(2,1fr)}
+  .q-row{grid-template-columns:1fr 1fr}
+  .score-grid{grid-template-columns:repeat(2,1fr)}
+  .inf-grid{grid-template-columns:repeat(2,1fr)}
+  .plan-grid{grid-template-columns:1fr;gap:10px}
+  .plan-grid .plan-card{padding:14px}
+  .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tab{white-space:nowrap;padding:8px 12px;font-size:10px}
+  .btn{min-height:40px}
+  .btn-sm{min-height:34px}
+  .mat-tbl{font-size:10px}
+  .mat-tbl td,.mat-tbl th{padding:4px 6px}
+  .steps{gap:0}
+  .step{font-size:9px;padding:5px 1px}
+  .step-n{width:14px;height:14px;line-height:14px;font-size:8px}
+  .card{padding:12px}
+  .main-tbl{font-size:11px}
+  .main-tbl td,.main-tbl th{padding:7px 8px}
+  .upload-z{padding:16px}
+  .lock-overlay{padding:16px}
+}
+
+@media(max-width:480px){
+  .cnt-grid{grid-template-columns:1fr 1fr}
+  .q-row{grid-template-columns:1fr}
+  .fg3{grid-template-columns:1fr}
+  .tb-title{display:none}
+  .score-grid{grid-template-columns:1fr 1fr}
+  .plan-grid{grid-template-columns:1fr}
+}
 `;
 
 const fmt = (n, d = 0) => Number(n).toLocaleString("fr-FR", { maximumFractionDigits: d });
@@ -245,6 +298,8 @@ export default function App() {
   const [planReal, setPlan] = useState("free");
   const [demoMode, setDemoMode] = useState(false);
   const plan = demoMode ? "elite" : planReal;
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = (id) => { setPage(id); setSidebarOpen(false); };
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   const [user, setUser] = useState(() => {
@@ -565,8 +620,11 @@ export default function App() {
       <style>{css}</style>
       <div className="app" dir={isRTL ? "rtl" : "ltr"}>
 
+        {/* ── SIDEBAR OVERLAY (mobile) ── */}
+        {sidebarOpen && <div className="sb-overlay" onClick={() => setSidebarOpen(false)} />}
+
         {/* ── SIDEBAR ── */}
-        <aside className="sb">
+        <aside className={`sb${sidebarOpen ? " open" : ""}`}>
           {/* ── Sélecteur de langue ── */}
           <div className="lang-bar">
             {LANGS.map(l => (
@@ -591,7 +649,7 @@ export default function App() {
           <nav className="sb-nav">
             {NAV.map((item, i) =>
               item.sec ? <div key={i} className="nav-sec">{item.sec}</div> : (
-                <div key={item.id} className={`nav-item${page === item.id ? " active" : ""}`} onClick={() => setPage(item.id)}>
+                <div key={item.id} className={`nav-item${page === item.id ? " active" : ""}`} onClick={() => navigate(item.id)}>
                   <span style={{ fontSize: 14 }}>{item.icon}</span>
                   {item.label}
                   {item.lock && !demoMode && <span className="nav-lock">🔒</span>}
@@ -631,6 +689,7 @@ export default function App() {
         {/* ── MAIN ── */}
         <div className="main">
           <div className="topbar">
+            <button className="hamburger" onClick={() => setSidebarOpen(v => !v)} aria-label="Menu">☰</button>
             <div className="tb-title">{titles[page] || "PHG BUILD IA"}</div>
             <div className="tb-btns">
               <button className="btn btn-out btn-sm" onClick={() => setPage("analyse")}>{t("btn_analyse")}</button>
