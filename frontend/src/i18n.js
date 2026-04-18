@@ -160,8 +160,8 @@ export const TRANSLATIONS = {
     f_pro_1:"Projets illimités", f_pro_2:"Matériaux détaillés", f_pro_3:"Recommandations IA",
     f_pro_4:"Export PDF PHG", f_pro_5:"Export DXF / AutoCAD", f_pro_6:"Bibliothèque 50 plans",
     // Features ELITE
-    f_el_1:"Tout du plan Pro", f_el_2:"Fournisseurs & commandes", f_el_3:"Gestion chantier complète",
-    f_el_4:"Marque blanche PDF", f_el_5:"API privée PHG", f_el_6:"Support prioritaire 24h",
+    f_el_1:"Accès prioritaire aux nouvelles fonctionnalités", f_el_2:"Support email prioritaire sous 48h", f_el_3:"PHG RADAR complet avec vue satellite",
+    f_el_4:"Gestion multi-projets avancée", f_el_5:"Export PDF/DXF illimité", f_el_6:"Rapport chantier complet",
 
     // Boutons plans
     btn_continue_free:"Continuer gratuitement", btn_activate_pro:"Activer PRO",
@@ -309,8 +309,8 @@ export const TRANSLATIONS = {
     f_free_4:"Quantity details", f_free_5:"PDF / DXF export", f_free_6:"Infrastructure",
     f_pro_1:"Unlimited projects", f_pro_2:"Detailed materials", f_pro_3:"AI recommendations",
     f_pro_4:"PHG PDF export", f_pro_5:"DXF / AutoCAD export", f_pro_6:"50-plan library",
-    f_el_1:"Everything in Pro", f_el_2:"Suppliers & orders", f_el_3:"Full site management",
-    f_el_4:"White-label PDF", f_el_5:"Private PHG API", f_el_6:"Priority 24h support",
+    f_el_1:"Priority access to new features", f_el_2:"Priority email support within 48h", f_el_3:"Full PHG RADAR with satellite view",
+    f_el_4:"Advanced multi-project management", f_el_5:"Unlimited PDF/DXF export", f_el_6:"Complete site report",
 
     btn_continue_free:"Continue for free", btn_activate_pro:"Activate PRO",
     btn_europe:"Europe €25", btn_africa:"Africa",
@@ -450,8 +450,8 @@ export const TRANSLATIONS = {
     f_free_4:"Detalle de cantidades", f_free_5:"Exportar PDF / DXF", f_free_6:"Infraestructura",
     f_pro_1:"Proyectos ilimitados", f_pro_2:"Materiales detallados", f_pro_3:"Recomendaciones IA",
     f_pro_4:"Exportar PDF PHG", f_pro_5:"Exportar DXF / AutoCAD", f_pro_6:"Biblioteca 50 planos",
-    f_el_1:"Todo del plan Pro", f_el_2:"Proveedores y pedidos", f_el_3:"Gestión de obra completa",
-    f_el_4:"PDF marca blanca", f_el_5:"API privada PHG", f_el_6:"Soporte prioritario 24h",
+    f_el_1:"Acceso prioritario a nuevas funciones", f_el_2:"Soporte email prioritario en 48h", f_el_3:"PHG RADAR completo con vista satélite",
+    f_el_4:"Gestión multi-proyecto avanzada", f_el_5:"Exportación PDF/DXF ilimitada", f_el_6:"Informe de obra completo",
 
     btn_continue_free:"Continuar gratis", btn_activate_pro:"Activar PRO",
     btn_europe:"Europa 25€", btn_africa:"África",
@@ -591,8 +591,8 @@ export const TRANSLATIONS = {
     f_free_4:"تفاصيل الكميات", f_free_5:"تصدير PDF / DXF", f_free_6:"البنية التحتية",
     f_pro_1:"مشاريع غير محدودة", f_pro_2:"مواد مفصّلة", f_pro_3:"توصيات الذكاء الاصطناعي",
     f_pro_4:"تصدير PDF PHG", f_pro_5:"تصدير DXF / AutoCAD", f_pro_6:"مكتبة 50 مخططاً",
-    f_el_1:"كل مزايا PRO", f_el_2:"الموردون والطلبات", f_el_3:"إدارة ورشة كاملة",
-    f_el_4:"PDF بعلامة بيضاء", f_el_5:"واجهة PHG الخاصة", f_el_6:"دعم أولوية 24 ساعة",
+    f_el_1:"وصول أولوية للميزات الجديدة", f_el_2:"دعم بريد إلكتروني أولوية خلال 48 ساعة", f_el_3:"PHG RADAR كامل مع صور الأقمار الصناعية",
+    f_el_4:"إدارة مشاريع متعددة متقدمة", f_el_5:"تصدير PDF/DXF غير محدود", f_el_6:"تقرير ورشة كامل",
 
     btn_continue_free:"الاستمرار مجاناً", btn_activate_pro:"تفعيل PRO",
     btn_europe:"أوروبا 25€", btn_africa:"أفريقيا",
