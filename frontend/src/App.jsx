@@ -452,8 +452,8 @@ export default function App() {
     const planKey = PLAN_KEY[p];
     if (!planKey) return;
 
-    const token = localStorage.getItem("phg_token");
-    if (!token) {
+    const currentToken = localStorage.getItem("phg_token") || token;
+    if (!currentToken) {
       setPendingPlan(p);
       setAuthModal(true); setAuthTab("login");
       setAuthError("Connectez-vous pour souscrire à un plan.");
@@ -466,7 +466,7 @@ export default function App() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          "Authorization": `Bearer ${currentToken}`,
         },
         body: JSON.stringify({ plan: planKey }),
       });
