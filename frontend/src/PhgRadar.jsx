@@ -1,4 +1,6 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+
+const GMAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 import { ETAPES_I18N } from "./i18n.js";
 
 // ── Couleurs par étape (non-traduisibles) ─────────────────────────────────────
@@ -11,7 +13,7 @@ const ETAPE_COLORS = {
 const INIT_CHANTIERS = [
   {
     id: 1, name: "Villa Cocody", pays: "CI", cur: "FCFA", type: "Villa", surface: 180,
-    address: "Cocody, Abidjan, Côte d'Ivoire",
+    address: "Cocody, Abidjan, Côte d'Ivoire", lat: 5.3706, lng: -4.0148,
     budget_total: 48200000, budget_consomme: 31300000,
     date_debut: "2024-01-15", date_fin_prevue: "2026-08-30",
     etapes: [
@@ -30,7 +32,7 @@ const INIT_CHANTIERS = [
   },
   {
     id: 2, name: "Maison Lyon", pays: "FR", cur: "€", type: "Maison", surface: 120,
-    address: "Lyon, France",
+    address: "Lyon, France", lat: 45.7640, lng: 4.8357,
     budget_total: 185000, budget_consomme: 42000,
     date_debut: "2025-03-01", date_fin_prevue: "2025-12-15",
     etapes: [
@@ -65,19 +67,48 @@ export default function PhgRadar({ setPage, t = (k) => k, lang = "fr" }) {
   const fileRef = useRef(null);
   const cameraRef = useRef(null);
 
-  // ── Satellite state ──────────────────────────────────────────────────────────
-  const [mapAddress, setMapAddress]   = useState("");
-  const [mapApiKey, setMapApiKey]     = useState(() => localStorage.getItem("phg_maps_key") || "");
-  const [mapUrl, setMapUrl]           = useState(null);
-  const [showKeyField, setShowKeyField] = useState(false);
-  const [mapLoading, setMapLoading]   = useState(false);
+  // ── Google Maps JS state ─────────────────────────────────────────────────────
+  const mapDivRef   = useRef(null);
+  const gMapRef     = useRef(null);
+  const gMarkerRef  = useRef(null);
+  const [mapsReady, setMapsReady] = useState(() => !!window.google?.maps?.Map);
+  const [mapError,  setMapError]  = useState(null);
 
-  // Pré-remplir l'adresse quand le chantier change
+  // Charger le script Google Maps une seule fois
   useEffect(() => {
+    if (!GMAPS_KEY || window.google?.maps?.Map) { if (window.google?.maps?.Map) setMapsReady(true); return; }
+    const SCRIPT_ID = "phg-gmaps";
+    if (document.getElementById(SCRIPT_ID)) return;
+    const s = document.createElement("script");
+    s.id = SCRIPT_ID;
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}`;
+    s.async = true; s.defer = true;
+    s.onload  = () => setMapsReady(true);
+    s.onerror = () => setMapError("Impossible de charger Google Maps. Vérifiez la clé API.");
+    document.head.appendChild(s);
+  }, []);
+
+  // Initialiser / mettre à jour la carte quand prête ou chantier change
+  useEffect(() => {
+    if (!mapsReady || !mapDivRef.current) return;
     const found = chantiers.find(c => c.id === chantierId);
-    setMapAddress(found?.address || "");
-    setMapUrl(null);
-  }, [chantierId]);
+    if (!found?.lat || !found?.lng) return;
+    const center = { lat: found.lat, lng: found.lng };
+    if (!gMapRef.current) {
+      gMapRef.current = new window.google.maps.Map(mapDivRef.current, {
+        center, zoom: 18, mapTypeId: "satellite",
+        mapTypeControl: false, streetViewControl: false, fullscreenControl: true,
+      });
+    } else {
+      gMapRef.current.panTo(center);
+      gMapRef.current.setZoom(18);
+    }
+    if (gMarkerRef.current) gMarkerRef.current.setMap(null);
+    gMarkerRef.current = new window.google.maps.Marker({
+      position: center, map: gMapRef.current, title: found.name,
+      animation: window.google.maps.Animation.DROP,
+    });
+  }, [mapsReady, chantierId, chantiers]);
 
   const ch = chantiers.find(c => c.id === chantierId);
 
@@ -168,20 +199,6 @@ export default function PhgRadar({ setPage, t = (k) => k, lang = "fr" }) {
     setChantiers(prev => prev.map(c =>
       c.id !== chantierId ? c : { ...c, alertes: c.alertes.filter(a => a.id !== alertId) }
     ));
-  };
-
-  // ── Localisation satellite ────────────────────────────────────────────────
-  const locateChantier = () => {
-    if (!mapAddress.trim()) return;
-    const enc = encodeURIComponent(mapAddress.trim());
-    if (mapApiKey.trim()) {
-      localStorage.setItem("phg_maps_key", mapApiKey.trim());
-      setMapUrl(`https://www.google.com/maps/embed/v1/place?key=${mapApiKey.trim()}&q=${enc}&maptype=satellite&zoom=18`);
-    } else {
-      // URL publique Google Maps sans clé (vue satellite via t=k)
-      setMapUrl(`https://maps.google.com/maps?q=${enc}&t=k&z=18&ie=UTF8&iwloc=&output=embed`);
-    }
-    setMapLoading(true);
   };
 
   // ── Timeline step class ────────────────────────────────────────────────────
@@ -492,128 +509,57 @@ export default function PhgRadar({ setPage, t = (k) => k, lang = "fr" }) {
           </div>
         </div>
 
-        {/* ── Vue Satellitaire ── */}
+        {/* ── Vue Satellitaire Google Maps ── */}
         <div className="card" style={{ marginTop: 14 }}>
           <div className="sat-header">
             <div>
               <div className="card-title" style={{ marginBottom: 2 }}>{t("sat_title")}</div>
-              <div style={{ fontSize: 10, color: "var(--dim)" }}>{t("sat_sub")}</div>
+              <div style={{ fontSize: 10, color: "var(--dim)" }}>
+                {ch.address} · {ch.lat?.toFixed(4)}, {ch.lng?.toFixed(4)}
+              </div>
             </div>
             <div className="sat-badge">{t("sat_badge")}</div>
           </div>
 
-          {/* Barre de recherche */}
-          <div className="sat-search-row">
-            <input
-              type="text"
-              className="sat-input"
-              placeholder={t("sat_placeholder_addr")}
-              value={mapAddress}
-              onChange={e => setMapAddress(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && locateChantier()}
-            />
-            <button
-              className="btn btn-gold btn-sm"
-              style={{ padding: "9px 18px", fontSize: 12, whiteSpace: "nowrap" }}
-              onClick={locateChantier}
-              disabled={!mapAddress.trim()}
-            >
-              {t("sat_btn")}
-            </button>
-          </div>
-
-          {/* Clé API (collapsible) */}
-          <div className="sat-key-toggle" onClick={() => setShowKeyField(v => !v)}>
-            <span style={{ fontSize: 12 }}>{showKeyField ? "▾" : "▸"}</span>
-            {mapApiKey ? t("sat_key_set") : t("sat_key_opt")}
-          </div>
-
-          {showKeyField && (
-            <div className="sat-key-row">
-              <label style={{ fontSize: 10, color: "var(--dim)", marginBottom: 4 }}>
-                {t("sat_key_label")}<a
-                  href="https://developers.google.com/maps/documentation/embed/get-api-key"
-                  target="_blank" rel="noreferrer"
-                  style={{ color: "var(--gold3)", textDecoration: "underline" }}>
-                  {t("sat_key_link")}
-                </a>
-              </label>
-              <input
-                type="text"
-                className="sat-input"
-                placeholder="AIzaSy..."
-                value={mapApiKey}
-                onChange={e => setMapApiKey(e.target.value)}
-                spellCheck={false}
-              />
-              <div style={{ fontSize: 9, color: "var(--dim2)", marginTop: 2 }}>
-                {t("sat_key_note")}
+          {!GMAPS_KEY ? (
+            <div className="sat-placeholder">
+              <div style={{ fontSize: 38, opacity: .4 }}>🛰️</div>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--dim)", marginBottom: 6 }}>
+                  Clé API Google Maps manquante
+                </div>
+                <div style={{ fontSize: 10, color: "var(--dim2)", lineHeight: 1.8, maxWidth: 240 }}>
+                  Ajoutez <code style={{ background: "rgba(201,168,76,.1)", padding: "1px 5px", borderRadius: 3, color: "var(--gold)" }}>VITE_GOOGLE_MAPS_API_KEY</code> dans votre fichier <code style={{ color: "var(--dim)" }}>.env.local</code> pour activer la vue satellite.
+                </div>
               </div>
             </div>
-          )}
-
-          {/* Carte ou placeholder */}
-          {mapUrl ? (
-            <div className="sat-frame-wrap">
-              {mapLoading && (
-                <div className="sat-frame-overlay" style={{ zIndex: 2 }}>
-                  <div style={{ fontSize: 28 }}>🛰️</div>
-                  <div style={{ fontSize: 11, color: "var(--dim)" }}>{t("sat_loading")}</div>
-                </div>
-              )}
-              <iframe
-                key={mapUrl}
-                src={mapUrl}
-                className="sat-frame"
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                title="Vue satellite du chantier"
-                onLoad={() => setMapLoading(false)}
-              />
-              <div style={{ padding: "10px 14px", background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 14 }}>📍</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, color: "var(--text)", fontWeight: 600 }}>{mapAddress}</div>
-                  <div style={{ fontSize: 9, color: "var(--dim)", marginTop: 2 }}>
-                    {ch.name} · {ch.type} · {ch.surface}m² · {ch.pays}
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <a
-                    href={`https://www.google.com/maps/search/${encodeURIComponent(mapAddress)}/@0,0,18z/data=!3m1!1e3`}
-                    target="_blank" rel="noreferrer"
-                    className="btn btn-out btn-sm"
-                    style={{ fontSize: 10, textDecoration: "none" }}>
-                    {t("sat_open")}
-                  </a>
-                  <button className="btn btn-out btn-sm" style={{ fontSize: 10 }}
-                    onClick={() => { setMapUrl(null); setMapLoading(false); }}>
-                    {t("sat_close")}
-                  </button>
-                </div>
-              </div>
+          ) : mapError ? (
+            <div className="sat-placeholder">
+              <div style={{ fontSize: 32, opacity: .5 }}>⚠️</div>
+              <div style={{ fontSize: 11, color: "var(--err)", textAlign: "center" }}>{mapError}</div>
             </div>
           ) : (
-            <div className="sat-placeholder">
-              <div style={{ fontSize: 44, opacity: .35 }}>🛰️</div>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--dim)", marginBottom: 4 }}>
-                  {t("sat_no_map")}
+            <>
+              <div
+                ref={mapDivRef}
+                style={{ width: "100%", height: 420, borderRadius: 8, overflow: "hidden", border: "1px solid var(--border2)", background: "var(--panel2)" }}
+              />
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "rgba(0,0,0,.4)", borderRadius: "0 0 8px 8px", marginTop: -4, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 13 }}>📍</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, color: "var(--text)", fontWeight: 600 }}>{ch.name}</div>
+                  <div style={{ fontSize: 9, color: "var(--dim)" }}>{ch.address} · {ch.lat}, {ch.lng}</div>
                 </div>
-                <div style={{ fontSize: 10, color: "var(--dim2)", lineHeight: 1.7 }}>
-                  {t("sat_no_map_sub")}
-                </div>
+                <a
+                  href={`https://www.google.com/maps?q=${ch.lat},${ch.lng}&t=k&z=18`}
+                  target="_blank" rel="noreferrer"
+                  className="btn btn-out btn-sm"
+                  style={{ fontSize: 10, textDecoration: "none" }}
+                >
+                  {t("sat_open")}
+                </a>
               </div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-                {chantiers.map(c => (
-                  <button key={c.id} className="btn btn-out btn-sm" style={{ fontSize: 10 }}
-                    onClick={() => { setMapAddress(c.address); setChantierId(c.id); }}>
-                    📍 {c.name}
-                  </button>
-                ))}
-              </div>
-            </div>
+            </>
           )}
         </div>
 
