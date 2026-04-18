@@ -370,6 +370,8 @@ export default function SimulateurEconomies({ setPage, t = (k) => k, lang = "fr"
     .pays-card-cur{font-size:8px;color:var(--dim2);margin-top:1px}
   `;
 
+  console.log("PAYS_LIST count:", PAYS_LIST.length, PAYS_LIST.map(p => p.code));
+
   return (
     <>
       <style>{CSS}</style>
@@ -401,16 +403,32 @@ export default function SimulateurEconomies({ setPage, t = (k) => k, lang = "fr"
             </div>
           </div>
         </div>
-        <div style={{ overflow: "visible", height: "auto" }}>
+        <div style={{ overflow: "visible", height: "auto", maxHeight: "none" }}>
           <label style={{ fontSize: 10, color: "var(--dim)", textTransform: "uppercase", letterSpacing: 1.5 }}>{t("sim_country")}</label>
-          <div className="pays-grid" style={{ overflow: "visible", height: "auto", maxHeight: "none" }}>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "7px",
+            marginTop: "10px",
+            overflow: "visible",
+            height: "auto",
+            maxHeight: "none",
+          }}>
             {PAYS_LIST.map(p => (
               <div key={p.code}
-                className={`pays-card${pays === p.code ? " active" : ""}`}
-                onClick={() => setPays(p.code)}>
-                <div className="pays-card-flag">{p.flag}</div>
-                <div className="pays-card-name">{p.name}</div>
-                <div className="pays-card-cur">{p.cur}</div>
+                onClick={() => setPays(p.code)}
+                style={{
+                  background: pays === p.code ? "rgba(201,168,76,.09)" : "var(--panel)",
+                  border: pays === p.code ? "1px solid var(--gold)" : "1px solid var(--border)",
+                  borderRadius: "8px",
+                  padding: "8px 5px",
+                  textAlign: "center",
+                  cursor: "pointer",
+                  boxShadow: pays === p.code ? "0 0 0 1px var(--gold3)" : "none",
+                }}>
+                <div style={{ fontSize: "18px", marginBottom: "2px" }}>{p.flag}</div>
+                <div style={{ fontSize: "9px", fontWeight: 600, color: pays === p.code ? "var(--gold)" : "var(--dim)", lineHeight: 1.2 }}>{p.name}</div>
+                <div style={{ fontSize: "8px", color: "var(--dim2)", marginTop: "1px" }}>{p.cur}</div>
               </div>
             ))}
           </div>

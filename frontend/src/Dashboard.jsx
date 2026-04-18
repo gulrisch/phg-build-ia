@@ -514,9 +514,24 @@ function NewProjectModal({ onClose, onCreated }) {
   const [form, setForm] = useState({
     title: "", project_type: "villa", country: "", city: "",
     surface_m2: "", floors: 1, quality_level: "standard",
+    latitude: "", longitude: "",
   });
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [locating, setLocating] = useState(false);
+
+  const locateMe = () => {
+    if (!navigator.geolocation) { setError("Géolocalisation non supportée par ce navigateur."); return; }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        set("latitude", pos.coords.latitude.toFixed(6));
+        set("longitude", pos.coords.longitude.toFixed(6));
+        setLocating(false);
+      },
+      () => { setError("Impossible d'obtenir la position."); setLocating(false); }
+    );
+  };
 
   useEffect(() => {
     api("/countries").then(setCountries).catch(() => {});
@@ -535,6 +550,8 @@ function NewProjectModal({ onClose, onCreated }) {
         surface_m2: parseFloat(form.surface_m2) || 100,
         floors: parseInt(form.floors) || 1,
         quality_level: form.quality_level,
+        latitude: form.latitude !== "" ? parseFloat(form.latitude) : null,
+        longitude: form.longitude !== "" ? parseFloat(form.longitude) : null,
       };
       const p = await api("/projects", "POST", payload);
       onCreated(p);
@@ -580,8 +597,27 @@ function NewProjectModal({ onClose, onCreated }) {
             </select>
           </div>
           <div className="form-group">
-            <label>Ville (optionnel)</label>
+            <label>Ville / Région (optionnel)</label>
             <input value={form.city} onChange={e => set("city", e.target.value)} placeholder="Abidjan, Paris…" />
+          </div>
+          <div className="form-group">
+            <label>Latitude</label>
+            <input type="number" step="any" value={form.latitude} onChange={e => set("latitude", e.target.value)} placeholder="ex: 5.345317" />
+          </div>
+          <div className="form-group">
+            <label>Longitude</label>
+            <input type="number" step="any" value={form.longitude} onChange={e => set("longitude", e.target.value)} placeholder="ex: -4.024429" />
+          </div>
+          <div className="form-group full">
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={locateMe}
+              disabled={locating}
+              style={{ width: "fit-content" }}
+            >
+              {locating ? "⏳ Localisation…" : "📍 Localiser automatiquement"}
+            </button>
           </div>
           <div className="form-group">
             <label>Surface (m²)</label>
