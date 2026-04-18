@@ -328,9 +328,22 @@ export default function App() {
   // Maison state
   const [step, setStep] = useState(1);
   const [cc, setCc] = useState("FR");
-  const [mForm, setMForm] = useState({ l: 12, w: 10, fl: 1, roofType: "pitched", budget: "", sdb: 2, desc: "Maison 120m², 3 chambres, salon, cuisine ouverte" });
+  const [mForm, setMForm] = useState({ l: 12, w: 10, fl: 1, roofType: "pitched", budget: "", sdb: 2, desc: "Maison 120m², 3 chambres, salon, cuisine ouverte", city: "", latitude: "", longitude: "" });
   const [qual, setQual] = useState("std");
+  const [locating, setLocating] = useState(false);
   const [computing, setComputing] = useState(false);
+
+  const locateMaison = () => {
+    if (!navigator.geolocation) { alert("Géolocalisation non supportée par ce navigateur."); return; }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setMForm(f => ({ ...f, latitude: pos.coords.latitude.toFixed(6), longitude: pos.coords.longitude.toFixed(6) }));
+        setLocating(false);
+      },
+      () => { alert("Impossible d'obtenir la position."); setLocating(false); }
+    );
+  };
   const [mResult, setMResult] = useState(null);
   const [mTab, setMTab] = useState("mat");
 
@@ -874,6 +887,14 @@ export default function App() {
                         <div className="fg"><label>Toiture</label><select value={mForm.roofType} onChange={e => setMForm(f => ({ ...f, roofType: e.target.value }))}><option value="pitched">Inclinée</option><option value="flat">Plate</option></select></div>
                         <div className="fg"><label>Budget cible</label><input type="number" value={mForm.budget} onChange={e => setMForm(f => ({ ...f, budget: e.target.value }))} placeholder="Optionnel" /></div>
                         <div className="fg"><label>Salles de bain</label><input type="number" value={mForm.sdb} onChange={e => setMForm(f => ({ ...f, sdb: parseInt(e.target.value) || 2 }))} /></div>
+                        <div className="fg"><label>Ville / Région</label><input value={mForm.city} onChange={e => setMForm(f => ({ ...f, city: e.target.value }))} placeholder="Abidjan, Paris…" /></div>
+                        <div className="fg"><label>Latitude</label><input type="number" step="any" value={mForm.latitude} onChange={e => setMForm(f => ({ ...f, latitude: e.target.value }))} placeholder="ex: 5.345317" /></div>
+                        <div className="fg"><label>Longitude</label><input type="number" step="any" value={mForm.longitude} onChange={e => setMForm(f => ({ ...f, longitude: e.target.value }))} placeholder="ex: -4.024429" /></div>
+                      </div>
+                      <div style={{ marginTop: 10 }}>
+                        <button type="button" className="btn btn-out" onClick={locateMaison} disabled={locating} style={{ fontSize: 12 }}>
+                          {locating ? "⏳ Localisation…" : "📍 Localiser automatiquement"}
+                        </button>
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
