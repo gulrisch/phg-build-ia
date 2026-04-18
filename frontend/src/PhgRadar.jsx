@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { ETAPES_I18N } from "./i18n.js";
 
 // ── Couleurs par étape (non-traduisibles) ─────────────────────────────────────
@@ -63,6 +63,7 @@ export default function PhgRadar({ setPage, t = (k) => k, lang = "fr" }) {
   const [dragOver, setDragOver]       = useState(false);
   const [uploadEtape, setUploadEtape] = useState("fondations");
   const fileRef = useRef(null);
+  const cameraRef = useRef(null);
 
   // ── Satellite state ──────────────────────────────────────────────────────────
   const [mapAddress, setMapAddress]   = useState("");
@@ -445,6 +446,24 @@ export default function PhgRadar({ setPage, t = (k) => k, lang = "fr" }) {
               <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: "none" }}
                 onChange={ev => { handleFiles(ev.target.files); ev.target.value = ""; }} />
             </div>
+
+            {/* Bouton caméra mobile */}
+            <button
+              type="button"
+              className="btn btn-out btn-sm"
+              style={{ width: "100%", justifyContent: "center", marginBottom: 14, fontSize: 12 }}
+              onClick={() => cameraRef.current?.click()}
+            >
+              📸 Prendre une photo
+            </button>
+            <input
+              ref={cameraRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              style={{ display: "none" }}
+              onChange={ev => { handleFiles(ev.target.files); ev.target.value = ""; }}
+            />
 
             {/* Grille photos */}
             {filteredPhotos.length === 0 ? (
