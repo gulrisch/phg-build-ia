@@ -443,7 +443,8 @@ export default function App() {
 
     const token = localStorage.getItem("phg_token");
     if (!token) {
-      alert("Connectez-vous d'abord pour souscrire à un plan.");
+      setAuthModal(true); setAuthTab("login");
+      setAuthError("Connectez-vous pour souscrire à un plan.");
       return;
     }
 
@@ -457,6 +458,13 @@ export default function App() {
         },
         body: JSON.stringify({ plan: planKey }),
       });
+
+      if (res.status === 401) {
+        logout();
+        setAuthModal(true); setAuthTab("login");
+        setAuthError("Session expirée. Reconnectez-vous pour continuer.");
+        return;
+      }
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
