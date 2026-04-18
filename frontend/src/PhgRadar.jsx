@@ -1,6 +1,4 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-
-const GMAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 import { ETAPES_I18N } from "./i18n.js";
 
 // ── Couleurs par étape (non-traduisibles) ─────────────────────────────────────
@@ -67,48 +65,71 @@ export default function PhgRadar({ setPage, t = (k) => k, lang = "fr" }) {
   const fileRef = useRef(null);
   const cameraRef = useRef(null);
 
-  // ── Google Maps JS state ─────────────────────────────────────────────────────
-  const mapDivRef   = useRef(null);
-  const gMapRef     = useRef(null);
-  const gMarkerRef  = useRef(null);
-  const [mapsReady, setMapsReady] = useState(() => !!window.google?.maps?.Map);
-  const [mapError,  setMapError]  = useState(null);
+  // ── Leaflet state ─────────────────────────────────────────────────────────────
+  const mapDivRef  = useRef(null);
+  const leafletRef = useRef(null);
+  const markerRef  = useRef(null);
+  const [leafletReady, setLeafletReady] = useState(() => !!window.L);
+  const [mapError,     setMapError]     = useState(null);
 
-  // Charger le script Google Maps une seule fois
+  // Charger Leaflet CSS + JS depuis CDN (une seule fois)
   useEffect(() => {
-    if (!GMAPS_KEY || window.google?.maps?.Map) { if (window.google?.maps?.Map) setMapsReady(true); return; }
-    const SCRIPT_ID = "phg-gmaps";
-    if (document.getElementById(SCRIPT_ID)) return;
+    if (!document.getElementById("leaflet-css")) {
+      const link = document.createElement("link");
+      link.id = "leaflet-css"; link.rel = "stylesheet";
+      link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+      document.head.appendChild(link);
+    }
+    if (window.L) { setLeafletReady(true); return; }
+    if (document.getElementById("leaflet-js")) return;
     const s = document.createElement("script");
-    s.id = SCRIPT_ID;
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}`;
-    s.async = true; s.defer = true;
-    s.onload  = () => setMapsReady(true);
-    s.onerror = () => setMapError("Impossible de charger Google Maps. Vérifiez la clé API.");
+    s.id = "leaflet-js";
+    s.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    s.async = true;
+    s.onload  = () => setLeafletReady(true);
+    s.onerror = () => setMapError("Impossible de charger Leaflet.");
     document.head.appendChild(s);
   }, []);
 
-  // Initialiser / mettre à jour la carte quand prête ou chantier change
+  // Détruire la carte Leaflet au démontage du composant
   useEffect(() => {
-    if (!mapsReady || !mapDivRef.current) return;
+    return () => {
+      if (leafletRef.current) { leafletRef.current.remove(); leafletRef.current = null; }
+    };
+  }, []);
+
+  // Initialiser / recentrer la carte quand Leaflet est prêt ou que le chantier change
+  useEffect(() => {
+    if (!leafletReady || !mapDivRef.current) return;
     const found = chantiers.find(c => c.id === chantierId);
     if (!found?.lat || !found?.lng) return;
-    const center = { lat: found.lat, lng: found.lng };
-    if (!gMapRef.current) {
-      gMapRef.current = new window.google.maps.Map(mapDivRef.current, {
-        center, zoom: 18, mapTypeId: "satellite",
-        mapTypeControl: false, streetViewControl: false, fullscreenControl: true,
-      });
-    } else {
-      gMapRef.current.panTo(center);
-      gMapRef.current.setZoom(18);
+    const L = window.L;
+    const center = [found.lat, found.lng];
+
+    if (!leafletRef.current) {
+      leafletRef.current = L.map(mapDivRef.current, { zoomControl: true, attributionControl: true });
+      L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        { maxZoom: 20, attribution: "Tiles © Esri — World Imagery" }
+      ).addTo(leafletRef.current);
     }
-    if (gMarkerRef.current) gMarkerRef.current.setMap(null);
-    gMarkerRef.current = new window.google.maps.Marker({
-      position: center, map: gMapRef.current, title: found.name,
-      animation: window.google.maps.Animation.DROP,
+    leafletRef.current.setView(center, 18);
+
+    // Marqueur doré custom
+    if (markerRef.current) markerRef.current.remove();
+    const icon = L.divIcon({
+      html: `<div style="width:22px;height:22px;background:#C9A84C;border:3px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 10px rgba(0,0,0,.6)"></div>`,
+      iconSize: [22, 22], iconAnchor: [11, 22], className: "",
     });
-  }, [mapsReady, chantierId, chantiers]);
+    markerRef.current = L.marker(center, { icon })
+      .addTo(leafletRef.current)
+      .bindPopup(
+        `<div style="font-family:sans-serif;font-size:12px;font-weight:700;color:#111">${found.name}</div>` +
+        `<div style="font-size:10px;color:#555;margin-top:2px">${found.address}</div>` +
+        `<div style="font-size:9px;color:#888;margin-top:2px">${found.lat}, ${found.lng}</div>`
+      )
+      .openPopup();
+  }, [leafletReady, chantierId, chantiers]);
 
   const ch = chantiers.find(c => c.id === chantierId);
 
@@ -509,49 +530,49 @@ export default function PhgRadar({ setPage, t = (k) => k, lang = "fr" }) {
           </div>
         </div>
 
-        {/* ── Vue Satellitaire Google Maps ── */}
+        {/* ── Vue Satellitaire Leaflet + Esri ── */}
         <div className="card" style={{ marginTop: 14 }}>
           <div className="sat-header">
             <div>
               <div className="card-title" style={{ marginBottom: 2 }}>{t("sat_title")}</div>
               <div style={{ fontSize: 10, color: "var(--dim)" }}>
-                {ch.address} · {ch.lat?.toFixed(4)}, {ch.lng?.toFixed(4)}
+                {ch.address}{ch.lat ? ` · ${ch.lat.toFixed(5)}, ${ch.lng.toFixed(5)}` : ""}
               </div>
             </div>
             <div className="sat-badge">{t("sat_badge")}</div>
           </div>
 
-          {!GMAPS_KEY ? (
+          {mapError ? (
             <div className="sat-placeholder">
-              <div style={{ fontSize: 38, opacity: .4 }}>🛰️</div>
+              <div style={{ fontSize: 28, opacity: .5 }}>⚠️</div>
+              <div style={{ fontSize: 11, color: "var(--err)", textAlign: "center" }}>{mapError}</div>
+            </div>
+          ) : !ch.lat || !ch.lng ? (
+            <div className="sat-placeholder">
+              <div style={{ fontSize: 38, opacity: .35 }}>🛰️</div>
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--dim)", marginBottom: 6 }}>
-                  Clé API Google Maps manquante
+                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--dim)", marginBottom: 4 }}>
+                  Coordonnées GPS manquantes
                 </div>
-                <div style={{ fontSize: 10, color: "var(--dim2)", lineHeight: 1.8, maxWidth: 240 }}>
-                  Ajoutez <code style={{ background: "rgba(201,168,76,.1)", padding: "1px 5px", borderRadius: 3, color: "var(--gold)" }}>VITE_GOOGLE_MAPS_API_KEY</code> dans votre fichier <code style={{ color: "var(--dim)" }}>.env.local</code> pour activer la vue satellite.
+                <div style={{ fontSize: 10, color: "var(--dim2)", lineHeight: 1.8 }}>
+                  Renseignez la latitude et la longitude du projet pour activer la vue satellite.
                 </div>
               </div>
-            </div>
-          ) : mapError ? (
-            <div className="sat-placeholder">
-              <div style={{ fontSize: 32, opacity: .5 }}>⚠️</div>
-              <div style={{ fontSize: 11, color: "var(--err)", textAlign: "center" }}>{mapError}</div>
             </div>
           ) : (
             <>
               <div
                 ref={mapDivRef}
-                style={{ width: "100%", height: 420, borderRadius: 8, overflow: "hidden", border: "1px solid var(--border2)", background: "var(--panel2)" }}
+                style={{ width: "100%", height: 400, borderRadius: "8px 8px 0 0", overflow: "hidden", border: "1px solid var(--border2)", borderBottom: "none", background: "var(--panel2)" }}
               />
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "rgba(0,0,0,.4)", borderRadius: "0 0 8px 8px", marginTop: -4, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "rgba(0,0,0,.45)", borderRadius: "0 0 8px 8px", border: "1px solid var(--border2)", borderTop: "none", flexWrap: "wrap" }}>
                 <span style={{ fontSize: 13 }}>📍</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 11, color: "var(--text)", fontWeight: 600 }}>{ch.name}</div>
-                  <div style={{ fontSize: 9, color: "var(--dim)" }}>{ch.address} · {ch.lat}, {ch.lng}</div>
+                  <div style={{ fontSize: 9, color: "var(--dim)" }}>{ch.lat}, {ch.lng} · Esri WorldImagery</div>
                 </div>
                 <a
-                  href={`https://www.google.com/maps?q=${ch.lat},${ch.lng}&t=k&z=18`}
+                  href={`https://www.openstreetmap.org/?mlat=${ch.lat}&mlon=${ch.lng}#map=18/${ch.lat}/${ch.lng}`}
                   target="_blank" rel="noreferrer"
                   className="btn btn-out btn-sm"
                   style={{ fontSize: 10, textDecoration: "none" }}
