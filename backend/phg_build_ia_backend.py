@@ -22,7 +22,7 @@ import stripe
 from fastapi import FastAPI, Depends, HTTPException, Header, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import JWTError, jwt
+from jose import JWTError, ExpiredSignatureError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import (
@@ -36,7 +36,7 @@ from sqlalchemy.orm import declarative_base, relationship, sessionmaker, Session
 # ─────────────────────────────────────────────
 SECRET_KEY = os.getenv("SECRET_KEY", "phg-build-ia-secret-change-in-prod")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24h
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", str(60 * 24 * 7)))  # 7 days default
 
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "sk_test_REPLACE_ME")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "whsec_REPLACE_ME")
@@ -1211,8 +1211,10 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 def decode_token(token: str) -> dict:
     try:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session expirée, reconnectez-vous")
     except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token invalide ou expiré")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token invalide")
 
 
 # ─────────────────────────────────────────────
