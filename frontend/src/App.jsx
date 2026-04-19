@@ -335,8 +335,7 @@ export default function App() {
   };
 
   const logout = () => {
-    localStorage.removeItem("phg_token");
-    localStorage.removeItem("phg_user");
+    localStorage.clear();
     setToken(null);
     setUser(null);
     setPlan("free");
