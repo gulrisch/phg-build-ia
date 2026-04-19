@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { LANGS, createT } from "./i18n.js";
 import ExportDXF from "./ExportDXF.jsx";
 import BibliothequePlans from "./BibliothequePlans.jsx";
@@ -313,6 +313,22 @@ export default function App() {
   const [authError, setAuthError]       = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  // Clear state and show login whenever any API call fires phg:logout (e.g. stale token after SECRET_KEY rotation)
+  useEffect(() => {
+    const handler = () => {
+      localStorage.clear();
+      setToken(null);
+      setUser(null);
+      setPlan("free");
+      setPendingPlan(null);
+      setAuthModal(true);
+      setAuthTab("login");
+      setAuthError("Session expirée, reconnectez-vous.");
+    };
+    window.addEventListener("phg:logout", handler);
+    return () => window.removeEventListener("phg:logout", handler);
+  }, []);
+
   const generatePassword = () => {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
     const pwd = Array.from({ length: 16 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
@@ -371,6 +387,10 @@ export default function App() {
         const meRes = await fetch(`${API}/auth/me`, {
           headers: { "Authorization": `Bearer ${data.access_token}` },
         });
+        if (meRes.status === 401) {
+          localStorage.clear();
+          throw new Error("Token invalide après connexion. Réessayez.");
+        }
         const me = meRes.ok ? await meRes.json() : { email: authForm.email };
         localStorage.setItem("phg_token", data.access_token);
         saveSession(data.access_token, me);
