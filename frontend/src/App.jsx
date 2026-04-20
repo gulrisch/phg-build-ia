@@ -393,6 +393,7 @@ export default function App() {
         }
         const me = meRes.ok ? await meRes.json() : { email: authForm.email };
         localStorage.setItem("phg_token", data.access_token);
+                localStorage.setItem("phg_email", me.email || authForm.email);
         saveSession(data.access_token, me);
       }
     } catch (err) {
@@ -460,11 +461,11 @@ export default function App() {
 
   // Mapping bouton → clé plan backend
   const PLAN_KEY = {
-    "pro":           "PRO",
-    "pro-annual":    "PRO",
-    "elite":         "ELITE",
-    "elite-annual":  "ELITE",
-    "elite-africa":  "ELITE_AFRIQUE",
+    "pro": "pro_mensuel",
+    "pro-annual": "pro_annuel",
+    "elite": "elite_mensuel",
+    "elite-annual": "elite_annuel",
+    "elite-africa": "afrique_mensuel",
   };
 
   const activatePlan = async (p) => {
@@ -487,7 +488,7 @@ export default function App() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${currentToken}`,
         },
-        body: JSON.stringify({ plan: planKey }),
+        body: JSON.stringify({ plan: planKey, user_email: localStorage.getItem("phg_email") || "" }),
       });
 
       if (res.status === 401) {
@@ -1570,3 +1571,5 @@ export default function App() {
     </>
   );
 }
+
+
