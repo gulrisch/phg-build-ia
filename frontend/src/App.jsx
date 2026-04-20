@@ -1,4 +1,4 @@
-﻿import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { LANGS, createT } from "./i18n.js";
 import ExportDXF from "./ExportDXF.jsx";
 import BibliothequePlans from "./BibliothequePlans.jsx";
@@ -482,7 +482,7 @@ export default function App() {
 
     setCheckoutLoading(p);
     try {
-      const res = await fetch(`${API}/api/create-checkout-session`, {
+      const res = await fetch(`${API}/stripe/checkout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
