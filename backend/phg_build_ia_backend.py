@@ -1230,8 +1230,12 @@ def get_db():
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     payload = decode_token(token)
-    user_id: int = payload.get("sub")
-    if user_id is None:
+    sub = payload.get("sub")
+    if sub is None:
+        raise HTTPException(status_code=401, detail="Token invalide")
+    try:
+        user_id = int(sub)
+    except (ValueError, TypeError):
         raise HTTPException(status_code=401, detail="Token invalide")
     user = db.query(User).filter(User.id == user_id).first()
     if not user or not user.is_active:
@@ -1625,7 +1629,7 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    token = create_access_token({"sub": user.id})
+    token = create_access_token({"sub": str(user.id)})
     return TokenResponse(
         access_token=token,
         user_id=user.id,
@@ -1641,7 +1645,7 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
         raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
 
     plan = user.subscription.plan if user.subscription else "FREE"
-    token = create_access_token({"sub": user.id})
+    token = create_access_token({"sub": str(user.id)})
     return TokenResponse(
         access_token=token,
         user_id=user.id,
