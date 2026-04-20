@@ -459,13 +459,13 @@ export default function App() {
   const [checkoutLoading, setCheckoutLoading] = useState(null); // plan key en cours
   const [pendingPlan, setPendingPlan] = useState(null); // plan à activer après login
 
-  // Mapping bouton → clé plan backend
+  // Mapping bouton → clé plan backend (doit correspondre aux clés de STRIPE_PLANS)
   const PLAN_KEY = {
-    "pro": "pro_mensuel",
-    "pro-annual": "pro_annuel",
-    "elite": "elite_mensuel",
-    "elite-annual": "elite_annuel",
-    "elite-africa": "afrique_mensuel",
+    "pro": "PRO",
+    "pro-annual": "PRO",
+    "elite": "ELITE",
+    "elite-annual": "ELITE",
+    "elite-africa": "ELITE_AFRIQUE",
   };
 
   const activatePlan = async (p) => {
