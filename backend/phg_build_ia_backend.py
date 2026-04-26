@@ -11,6 +11,11 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 
+print("=== STRIPE DEBUG ===")
+print(f"STRIPE_SECRET_KEY present: {'STRIPE_SECRET_KEY' in os.environ}")
+print(f"All env vars with STRIPE: {[k for k in os.environ.keys() if 'STRIPE' in k]}")
+print("===================")
+
 try:
     import anthropic as anthropic_sdk
     _ANTHROPIC_AVAILABLE = True
