@@ -38,10 +38,10 @@ SECRET_KEY = os.getenv("SECRET_KEY", "phg-build-ia-secret-change-in-prod")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", str(60 * 24 * 30)))  # 30 days default
 
-STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "sk_test_REPLACE_ME")
-STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "whsec_REPLACE_ME")
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
-stripe.api_key = STRIPE_SECRET_KEY
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./phg_build_ia.db")
 
