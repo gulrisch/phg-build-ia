@@ -14,7 +14,7 @@ import SuiviChantier from "./SuiviChantier.jsx";
 import EnvoiArgent from "./EnvoiArgent.jsx";
 
 // ── PHG BUILD IA — App complète avec plans Gratuit / Pro 12,90€/mois (77€/an) / Elite 25€/mois (210€/an) / Afrique 17€/mois (135€/an)
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL || "https://phg-build-ia-production-9dc4.up.railway.app";
 
 const PRICES = {
   FR:{beton:185,acier:1.4, par:1.80,cim:8.5, sable:42,grav:48,tole:18,tuile:28,tuile_pre:42,fen:280,cable:2.8, pvc:3.4, maçon:220,elec:250,plom:260,ing:420},
