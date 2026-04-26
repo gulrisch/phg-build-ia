@@ -39,10 +39,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "phg-build-ia-secret-change-in-prod")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", str(60 * 24 * 30)))  # 30 days default
 
-STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
-
-stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./phg_build_ia.db")
 
@@ -1888,6 +1885,7 @@ def create_checkout(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
     logging.warning(f"STRIPE KEY PRESENT: {bool(os.environ.get('STRIPE_SECRET_KEY'))}")
     logging.warning(f"STRIPE KEY PREFIX: {str(os.environ.get('STRIPE_SECRET_KEY', ''))[:10]}")
     logging.warning(f"STRIPE API KEY SET: {bool(stripe.api_key)}")
@@ -1944,6 +1942,7 @@ def create_checkout(
 @app.post("/stripe/webhook", tags=["Abonnements"])
 async def stripe_webhook(request: Request, stripe_signature: str = Header(None)):
     """Webhook Stripe — gère les événements d'abonnement."""
+    stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
     body = await request.body()
 
     try:
