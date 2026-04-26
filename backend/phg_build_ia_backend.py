@@ -1909,8 +1909,8 @@ def create_checkout(
             payment_method_types=["card"],
             line_items=[{"price": plan["price_id"], "quantity": 1}],
             mode="subscription",
-            success_url=f"{FRONTEND_URL}/dashboard?checkout=success&plan={plan_key}",
-            cancel_url=f"{FRONTEND_URL}/pricing?checkout=cancelled",
+            success_url=f"{FRONTEND_URL}/?checkout=success&plan={plan_key}",
+            cancel_url=f"{FRONTEND_URL}/?checkout=cancelled",
             metadata={
                 "user_id": str(current_user.id),
                 "plan": plan_key,

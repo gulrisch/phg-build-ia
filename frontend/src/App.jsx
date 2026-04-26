@@ -331,6 +331,22 @@ export default function App() {
     return () => window.removeEventListener("phg:logout", handler);
   }, []);
 
+  // ── Retour Stripe Checkout ────────────────────────────────────────────────
+  const [checkoutStatus, setCheckoutStatus] = useState(null); // "success" | "cancelled" | null
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("checkout");
+    if (status === "success") {
+      const planBack = params.get("plan") || "";
+      setCheckoutStatus({ ok: true, plan: planBack });
+      setPage("abonnement");
+      window.history.replaceState({}, "", "/");
+    } else if (status === "cancelled") {
+      setCheckoutStatus({ ok: false });
+      window.history.replaceState({}, "", "/");
+    }
+  }, []);
+
   const generatePassword = () => {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
     const pwd = Array.from({ length: 16 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
@@ -756,6 +772,23 @@ export default function App() {
             </div>
           </div>
           <div className="content">
+
+            {/* ── Bannière retour Stripe ── */}
+            {checkoutStatus && (
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "12px 18px", borderRadius: "var(--r)", marginBottom: 16,
+                background: checkoutStatus.ok ? "rgba(76,175,110,.1)" : "rgba(201,76,76,.08)",
+                border: `1px solid ${checkoutStatus.ok ? "rgba(76,175,110,.3)" : "rgba(201,76,76,.25)"}`,
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: checkoutStatus.ok ? "var(--ok)" : "var(--err)" }}>
+                  {checkoutStatus.ok
+                    ? `✓ Paiement confirmé — plan ${checkoutStatus.plan} activé. Reconnectez-vous pour rafraîchir votre accès.`
+                    : "✗ Paiement annulé — aucun prélèvement effectué."}
+                </span>
+                <button onClick={() => setCheckoutStatus(null)} style={{ background: "none", border: "none", color: "var(--dim)", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: "0 4px" }}>×</button>
+              </div>
+            )}
 
             {/* ══ ACCUEIL ══ */}
             {page === "accueil" && (
