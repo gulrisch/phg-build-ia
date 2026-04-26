@@ -7,6 +7,7 @@ import os
 import json
 import hmac
 import hashlib
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 
@@ -1887,6 +1888,11 @@ def create_checkout(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    logging.warning(f"STRIPE KEY PRESENT: {bool(os.environ.get('STRIPE_SECRET_KEY'))}")
+    logging.warning(f"STRIPE KEY PREFIX: {str(os.environ.get('STRIPE_SECRET_KEY', ''))[:10]}")
+    logging.warning(f"STRIPE API KEY SET: {bool(stripe.api_key)}")
+    logging.warning(f"STRIPE API KEY PREFIX: {str(stripe.api_key or '')[:10]}")
+
     plan_key = payload.plan.upper()
     if plan_key not in STRIPE_PLANS:
         raise HTTPException(status_code=400, detail=f"Plan '{payload.plan}' invalide. Choisir : PRO, ELITE, ELITE_AFRIQUE")
