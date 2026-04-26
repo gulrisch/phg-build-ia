@@ -7,9 +7,11 @@ import GestionChantier from "./GestionChantier.jsx";
 import SimulateurEconomies from "./SimulateurEconomies.jsx";
 import PhgRadar from "./PhgRadar.jsx";
 import AssistantIA from "./AssistantIA.jsx";
+import BudgetIA from "./BudgetIA";
 import DiagnosticRestauration from "./DiagnosticRestauration.jsx";
 import RapportPDF from "./RapportPDF.jsx";
 import SuiviChantier from "./SuiviChantier.jsx";
+import EnvoiArgent from "./EnvoiArgent.jsx";
 
 // ── PHG BUILD IA — App complète avec plans Gratuit / Pro 12,90€/mois (77€/an) / Elite 25€/mois (210€/an) / Afrique 17€/mois (135€/an)
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -632,6 +634,8 @@ export default function App() {
     { id: "suivi_chantier",icon: "📋", label: "Suivi de Chantier",       lock: !CAN.pdf(plan) },
     { id: "radar",         icon: "📡", label: t("nav_radar"),            lock: !CAN.pdf(plan) },
     { id: "assistant",     icon: "🤖", label: "Assistant IA",             lock: !CAN.pdf(plan) },
+    { id: "budget",        icon: "💰", label: "Budget IA" },
+    { id: "envoiargent",   icon: "🌍", label: "Construire depuis l'étranger" },
     { sec: t("sec_data") },
     { id: "projets",     icon: "⬡",  label: t("nav_projets") },
     { id: "abonnement",  icon: "◆",  label: t("nav_abo") },
@@ -653,7 +657,8 @@ export default function App() {
     assistant:      "Assistant PHG IA",
     restauration:   "Diagnostic Restauration",
     rapport_pdf:    "Rapport d'Estimation PDF",
-    suivi_chantier: "Suivi de Chantier",
+    suivi_chantier:  "Suivi de Chantier",
+    envoiargent:     "Construire depuis l'étranger",
   };
 
   return (
@@ -1317,7 +1322,8 @@ export default function App() {
             {page === "fournisseurs" && <CarnetFournisseurs plan={plan} />}
 
             {/* ══ CHANTIER ══ */}
-            {page === "chantier" && <GestionChantier plan={plan} />}
+            {page === "budget" && <BudgetIA plan={plan} setPage={setPage} lang={lang} />}
+          {page === "chantier" && <GestionChantier plan={plan} />}
 
             {/* ══ PHG RADAR ══ */}
             {page === "radar" && <PhgRadar setPage={setPage} t={t} lang={lang} />}
@@ -1342,6 +1348,9 @@ export default function App() {
                 />
               )
             )}
+
+            {/* ══ CONSTRUIRE DEPUIS L'ÉTRANGER ══ */}
+            {page === "envoiargent" && <EnvoiArgent plan={plan} lang={lang} />}
 
             {/* ══ SUIVI CHANTIER ══ */}
             {page === "suivi_chantier" && (
