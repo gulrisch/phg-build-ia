@@ -368,6 +368,30 @@ export default function SimulateurEconomies({ setPage, t = (k) => k, lang = "fr"
     .pays-card-name{font-size:9px;font-weight:600;color:var(--dim);line-height:1.2;word-break:break-word}
     .pays-card.active .pays-card-name{color:var(--gold)}
     .pays-card-cur{font-size:8px;color:var(--dim2);margin-top:1px}
+    .sim-2col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+    .sim-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px}
+
+    @media(max-width:640px){
+      .sim-types{grid-template-columns:repeat(3,1fr);gap:7px}
+      .sim-type{padding:10px 6px}
+      .sim-type-icon{font-size:20px;margin-bottom:4px}
+      .sim-kpi-row{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+      .sim-kpi{padding:12px 10px}
+      .sim-kpi-val{font-size:15px}
+      .sim-2col{grid-template-columns:1fr!important;gap:10px}
+      .sim-3col{grid-template-columns:1fr 1fr!important;gap:8px}
+      .archi-vs{grid-template-columns:1fr!important;gap:8px}
+      .archi-vs-sep{display:none}
+      .archi-col-price{font-size:17px}
+      .mode-tab{padding:8px 6px;font-size:10px}
+      .cta-strip{padding:16px 12px}
+      .ratio-badge{flex-direction:column;gap:4px;padding:10px 12px}
+    }
+    @media(max-width:380px){
+      .sim-types{grid-template-columns:repeat(2,1fr)}
+      .sim-kpi-row{grid-template-columns:1fr 1fr}
+      .sim-3col{grid-template-columns:1fr!important}
+    }
   `;
 
   console.log("PAYS_LIST count:", PAYS_LIST.length, PAYS_LIST.map(p => p.code));
@@ -377,7 +401,7 @@ export default function SimulateurEconomies({ setPage, t = (k) => k, lang = "fr"
       <style>{CSS}</style>
 
       {/* ── Sélecteur de type ── */}
-      <div className="card">
+      <div className="card" style={{ overflow: "visible" }}>
         <div className="card-title">{t("sim_select")}</div>
         <div className="sim-types">
           {CHANTIERS.map(c => (
@@ -490,7 +514,7 @@ export default function SimulateurEconomies({ setPage, t = (k) => k, lang = "fr"
         </div>
 
         {/* Comparaisons visuelles */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+        <div className="sim-2col">
           <div className="card">
             <div className="card-title">{t("sim_compare_costs")}</div>
             <CompareBar label={t("sim_without")} value={coutSans} max={coutSans} color="var(--err)" suffix={` ${cur}`} />
@@ -527,7 +551,7 @@ export default function SimulateurEconomies({ setPage, t = (k) => k, lang = "fr"
         </div>
 
         {/* Erreurs vs gains */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+        <div className="sim-2col">
           <div className="card">
             <div className="card-title" style={{ color: "var(--err)" }}>{t("sim_errors")}</div>
             {ch.erreurs_typiques.map((e, i) => (
@@ -551,9 +575,7 @@ export default function SimulateurEconomies({ setPage, t = (k) => k, lang = "fr"
         {/* ROI surcoûts */}
         <div className="card">
           <div className="card-title">{t("sim_roi")}</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
-            {[
-              { label: t("sim_roi_cost"), value: `${fmt(Math.round(12.90 * 12 * rate))} ${cur}`, color: "var(--dim)" },
+          <div className="sim-3col">
               { label: t("sim_roi_savings"), value: `${fmt(economie)} ${cur}`, color: "var(--ok)" },
               { label: t("sim_roi_label"), value: `×${Math.max(1, Math.round(economie / (12.90 * 12 * rate)))}`, color: "var(--gold)" },
             ].map(({ label, value, color }) => (
@@ -741,7 +763,7 @@ export default function SimulateurEconomies({ setPage, t = (k) => k, lang = "fr"
         </div>
 
         {/* Avantages PHG vs Architecte */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+        <div className="sim-2col">
           <div className="card">
             <div className="card-title" style={{ color: "var(--err)" }}>👷 Architecte traditionnel</div>
             {[
@@ -779,9 +801,7 @@ export default function SimulateurEconomies({ setPage, t = (k) => k, lang = "fr"
         {/* CTA */}
         <div className="card">
           <div className="card-title">{t("sim_roi")}</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
-            {[
-              { label: "Honoraires architecte", value: `${fmt(archiHonoraires)} ${cur}`, color: "var(--err)" },
+          <div className="sim-3col">
               { label: "Abonnement PHG PRO/an", value: `${fmt(phgAnnuel)} ${cur}`, color: "var(--gold)" },
               { label: "Rapport coût / valeur", value: `×${ratioArchi}`, color: "var(--ok)" },
             ].map(({ label, value, color }) => (
