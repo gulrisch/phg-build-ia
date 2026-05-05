@@ -11,6 +11,7 @@ import BudgetIA from "./BudgetIA";
 import DiagnosticRestauration from "./DiagnosticRestauration.jsx";
 import RapportPDF from "./RapportPDF.jsx";
 import SuiviChantier from "./SuiviChantier.jsx";
+import PHGPlan2D from "./PHGPlan2D";
 import EnvoiArgent from "./EnvoiArgent.jsx";
 
 // ── PHG BUILD IA — App complète avec plans Gratuit / Pro 12,90€/mois (77€/an) / Elite 25€/mois (210€/an) / Afrique 17€/mois (135€/an)
@@ -647,6 +648,7 @@ export default function App() {
     { id: "rapport_pdf",   icon: "📄", label: "Rapport PDF",             lock: !CAN.pdf(plan) },
     { id: "fournisseurs",  icon: "🏪", label: t("nav_fourni"),           lock: !CAN.pdf(plan) },
     { id: "chantier",      icon: "🏗️", label: t("nav_chantier"),         lock: !CAN.pdf(plan) },
+    { id: "plan2d", icon: "📐", label: "Plan 2D", lock: !CAN.pdf(plan) },
     { id: "suivi_chantier",icon: "📋", label: "Suivi de Chantier",       lock: !CAN.pdf(plan) },
     { id: "radar",         icon: "📡", label: t("nav_radar"),            lock: !CAN.pdf(plan) },
     { id: "assistant",     icon: "🤖", label: "Assistant IA",             lock: !CAN.pdf(plan) },
@@ -1356,7 +1358,10 @@ export default function App() {
 
             {/* ══ CHANTIER ══ */}
             {page === "budget" && <BudgetIA plan={plan} setPage={setPage} lang={lang} />}
-          {page === "chantier" && <GestionChantier plan={plan} />}
+          {page === "chantier" && <GestionChantier plan={plan} />
+
+              {/* == PLAN 2D == */}
+              {page === "plan2d" && <PHGPlan2D projectId={plan?.id} projectName={plan?.title} userTier={(user?.plan||"FREE").toLowerCase()} onUpgrade={()=>setPage("abonnement")} />}}
 
             {/* ══ PHG RADAR ══ */}
             {page === "radar" && <PhgRadar setPage={setPage} t={t} lang={lang} />}
