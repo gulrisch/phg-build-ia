@@ -15,7 +15,8 @@
       "Bash(git -C \"C:/Users/frede/Downloads/PHG_BUILD_IA\" diff --stat HEAD)",
       "Bash(git -C \"C:/Users/frede/Downloads/PHG_BUILD_IA\" add frontend/src/Dashboard.jsx frontend/src/SimulateurEconomies.jsx)",
       "Bash(git -C C:/Users/frede/Downloads/PHG_BUILD_IA commit -m ' *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(npx vite *)"
     ]
   }
 }

@@ -1,0 +1,5 @@
+﻿content = open('App.jsx', encoding='utf-8').read()
+content = content.replace('import DiagnosticRestauration', 'import BudgetIA from "./BudgetIA";\nimport DiagnosticRestauration')
+content = content.replace('{page === "chantier"', '{page === "budget" && <BudgetIA plan={plan} setPage={setPage} lang={lang} />}\n          {page === "chantier"')
+open('App.jsx', 'w', encoding='utf-8').write(content)
+print('OK')

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import BudgetIA from "./BudgetIA";
 import { getToken } from "./api.js";
 
 const API = "http://localhost:8000";
@@ -859,6 +860,7 @@ export default function App() {
       case "plans": return <PlansPage />;
       case "clients": return <ClientsPage />;
       case "subscriptions": return <SubscriptionsPage />;
+      case "budget": return <BudgetIA plan={null} setPage={navigate} lang="fr" />;
       default: return <DashboardPage />;
     }
   };
