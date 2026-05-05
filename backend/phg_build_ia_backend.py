@@ -1180,6 +1180,23 @@ AFRICAN_COUNTRIES_SEED = [
 ]
 
 
+
+
+class Plan(Base):
+    __tablename__ = "plans"
+    __table_args__ = {"extend_existing": True}
+
+    id         = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), unique=True, nullable=False)
+    walls      = Column(JSON, nullable=False, default=list)
+    items      = Column(JSON, nullable=False, default=list)
+    labels     = Column(JSON, nullable=False, default=list)
+    sketches   = Column(JSON, nullable=False, default=list)
+    meta       = Column(JSON, nullable=False, default=dict)
+    thumbnail  = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
 def seed_countries(db: Session):
     """Insère les données pays si elles n'existent pas."""
     for data in AFRICAN_COUNTRIES_SEED:
@@ -2614,6 +2631,84 @@ async def ai_chat(payload: AIChatRequest):
 # ─────────────────────────────────────────────
 # ENTRY POINT
 # ─────────────────────────────────────────────
+
+
+TIER_LIMITS = {"FREE":{"max_walls":30,"max_items":10,"pdf":False,"autosave":False},"PRO":{"max_walls":None,"max_items":None,"pdf":True,"autosave":True},"ELITE":{"max_walls":None,"max_items":None,"pdf":True,"autosave":True},"ELITE_AFRIQUE":{"max_walls":None,"max_items":None,"pdf":True,"autosave":True}}
+
+class PlanMeta(BaseModel):
+    scale: float = 1.0
+    pan: dict = {"x":40,"y":40}
+
+class PlanData(BaseModel):
+    walls: List[dict] = []
+    items: List[dict] = []
+    labels: List[dict] = []
+    sketches: List[dict] = []
+    meta: PlanMeta = PlanMeta()
+    thumbnail: Optional[str] = None
+
+class PlanResponse(BaseModel):
+    project_id: int
+    walls: List[dict]
+    items: List[dict]
+    labels: List[dict]
+    sketches: List[dict]
+    meta: dict
+    thumbnail: Optional[str] = None
+    updated_at: Optional[str] = None
+    tier: str = "FREE"
+    limits: dict = {}
+
+class PlanSummary(BaseModel):
+    project_id: int
+    thumbnail: Optional[str] = None
+    wall_count: int = 0
+    item_count: int = 0
+    updated_at: Optional[str] = None
+
+
+@app.get("/projects/plans/summaries", response_model=List[PlanSummary], tags=["Plan 2D"])
+def get_plan_summaries(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    projects = db.query(Project).filter(Project.owner_id == current_user.id).all()
+    result = []
+    for p in projects:
+        plan = db.query(Plan).filter(Plan.project_id == p.id).first()
+        result.append(PlanSummary(project_id=p.id, thumbnail=plan.thumbnail if plan else None, wall_count=len(plan.walls) if plan and plan.walls else 0, item_count=len(plan.items) if plan and plan.items else 0, updated_at=str(plan.updated_at) if plan and plan.updated_at else None))
+    return result
+
+@app.get("/projects/{project_id}/plan", response_model=PlanResponse, tags=["Plan 2D"])
+def get_plan(project_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    proj = db.query(Project).filter(Project.id == project_id, Project.owner_id == current_user.id).first()
+    if not proj: raise HTTPException(404, "Projet introuvable")
+    tier = current_user.subscription.plan if current_user.subscription else "FREE"
+    limits = TIER_LIMITS.get(tier, TIER_LIMITS["FREE"])
+    plan = db.query(Plan).filter(Plan.project_id == project_id).first()
+    if not plan: return PlanResponse(project_id=project_id, walls=[], items=[], labels=[], sketches=[], meta={"scale":1,"pan":{"x":40,"y":40}}, tier=tier, limits=limits)
+    return PlanResponse(project_id=project_id, walls=plan.walls or [], items=plan.items or [], labels=plan.labels or [], sketches=plan.sketches or [], meta=plan.meta or {}, thumbnail=plan.thumbnail, updated_at=str(plan.updated_at) if plan.updated_at else None, tier=tier, limits=limits)
+
+@app.post("/projects/{project_id}/plan", response_model=PlanResponse, tags=["Plan 2D"])
+def save_plan(project_id: int, payload: PlanData, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    proj = db.query(Project).filter(Project.id == project_id, Project.owner_id == current_user.id).first()
+    if not proj: raise HTTPException(404, "Projet introuvable")
+    tier = current_user.subscription.plan if current_user.subscription else "FREE"
+    limits = TIER_LIMITS.get(tier, TIER_LIMITS["FREE"])
+    if limits["max_walls"] and len(payload.walls) > limits["max_walls"]: raise HTTPException(403, "Limite murs atteinte. Passez en Pro.")
+    if limits["max_items"] and len(payload.items) > limits["max_items"]: raise HTTPException(403, "Limite mobilier atteinte. Passez en Pro.")
+    plan = db.query(Plan).filter(Plan.project_id == project_id).first()
+    if plan:
+        plan.walls=payload.walls; plan.items=payload.items; plan.labels=payload.labels; plan.sketches=payload.sketches; plan.meta=payload.meta.dict(); plan.thumbnail=payload.thumbnail; plan.updated_at=datetime.now(timezone.utc)
+    else:
+        plan = Plan(project_id=project_id, walls=payload.walls, items=payload.items, labels=payload.labels, sketches=payload.sketches, meta=payload.meta.dict(), thumbnail=payload.thumbnail)
+        db.add(plan)
+    db.commit(); db.refresh(plan)
+    return PlanResponse(project_id=project_id, walls=plan.walls or [], items=plan.items or [], labels=plan.labels or [], sketches=plan.sketches or [], meta=plan.meta or {}, thumbnail=plan.thumbnail, updated_at=str(plan.updated_at), tier=tier, limits=limits)
+
+@app.delete("/projects/{project_id}/plan", status_code=204, tags=["Plan 2D"])
+def delete_plan(project_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    proj = db.query(Project).filter(Project.id == project_id, Project.owner_id == current_user.id).first()
+    if not proj: raise HTTPException(404, "Projet introuvable")
+    db.query(Plan).filter(Plan.project_id == project_id).delete()
+    db.commit()
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("phg_build_ia_backend:app", host="0.0.0.0", port=8000, reload=True)
