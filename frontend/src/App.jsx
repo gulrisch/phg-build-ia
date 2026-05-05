@@ -648,7 +648,7 @@ export default function App() {
     { id: "rapport_pdf",   icon: "📄", label: "Rapport PDF",             lock: !CAN.pdf(plan) },
     { id: "fournisseurs",  icon: "🏪", label: t("nav_fourni"),           lock: !CAN.pdf(plan) },
     { id: "chantier",      icon: "🏗️", label: t("nav_chantier"),         lock: !CAN.pdf(plan) },
-    { id: "plan2d", icon: "📐", label: "Plan 2D", lock: !CAN.pdf(plan) },
+    { id: "plan2d", icon: "📐",🗺bel: "Plan 2D", lock: !CAN.pdf(plan) },
     { id: "suivi_chantier",icon: "📋", label: "Suivi de Chantier",       lock: !CAN.pdf(plan) },
     { id: "radar",         icon: "📡", label: t("nav_radar"),            lock: !CAN.pdf(plan) },
     { id: "assistant",     icon: "🤖", label: "Assistant IA",             lock: !CAN.pdf(plan) },
