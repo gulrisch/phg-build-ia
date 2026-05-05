@@ -1358,7 +1358,6 @@ export default function App() {
 
             {/* ══ CHANTIER ══ */}
             {page === "budget" && <BudgetIA plan={plan} setPage={setPage} lang={lang} />}
-          {page === "chantier" && <GestionChantier plan={plan} />}
 
               {/* PLAN 2D */}
               {page === "plan2d" && <PHGPlan2D projectId={plan?.id} projectName={plan?.title} userTier={(user?.plan||"FREE").toLowerCase()} onUpgrade={()=>setPage("abonnement")} />}
