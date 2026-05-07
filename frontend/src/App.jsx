@@ -654,7 +654,7 @@ export default function App() {
     { id: "radar",         icon: "📡", label: t("nav_radar"),            lock: !CAN.pdf(plan) },
     { id: "assistant",     icon: "🤖", label: "Assistant IA",             lock: !CAN.pdf(plan) },
     { id: "envoiargent", icon: "🌍", label: "Construire depuis l'étranger" },
-    { id: "comparateur", label: "Comparateur Plans IA", icon: "26" },
+    { id: "comparateur", label: "Comparateur Plans IA", icon: "⚖️" },
     { id: "budget",      icon: "💰", label: "Budget IA" },
     { sec: t("sec_data") },
     { id: "projets",     icon: "⬡",  label: t("nav_projets") },
