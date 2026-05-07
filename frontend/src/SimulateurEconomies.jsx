@@ -576,7 +576,7 @@ export default function SimulateurEconomies({ setPage, t = (k) => k, lang = "fr"
         <div className="card">
           <div className="card-title">{t("sim_roi")}</div>
           <div className="sim-3col">
-              { label: t("sim_roi_savings"), value: `${fmt(economie)} ${cur}`, color: "var(--ok)" },
+              [{ label: t("sim_roi_savings"), value: `${fmt(economie)} ${cur}`, color: "var(--ok)" },
               { label: t("sim_roi_label"), value: `×${Math.max(1, Math.round(economie / (12.90 * 12 * rate)))}`, color: "var(--gold)" },
             ].map(({ label, value, color }) => (
               <div key={label} style={{ background: "var(--panel2)", border: "1px solid var(--border)", borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
