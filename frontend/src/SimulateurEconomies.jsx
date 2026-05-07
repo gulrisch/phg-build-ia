@@ -802,7 +802,7 @@ export default function SimulateurEconomies({ setPage, t = (k) => k, lang = "fr"
         <div className="card">
           <div className="card-title">{t("sim_roi")}</div>
           <div className="sim-3col">
-              { label: "Abonnement PHG PRO/an", value: `${fmt(phgAnnuel)} ${cur}`, color: "var(--gold)" },
+              {[ label: "Abonnement PHG PRO/an", value: `${fmt(phgAnnuel)} ${cur}`, color: "var(--gold)" },
               { label: "Rapport coût / valeur", value: `×${ratioArchi}`, color: "var(--ok)" },
             ].map(({ label, value, color }) => (
               <div key={label} style={{ background: "var(--panel2)", border: "1px solid var(--border)", borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
