@@ -7,6 +7,7 @@ import GestionChantier from "./GestionChantier.jsx";
 import SimulateurEconomies from "./SimulateurEconomies.jsx";
 import PhgRadar from "./PhgRadar.jsx";
 import AssistantIA from "./AssistantIA.jsx";
+import ComparateurPlans from './ComparateurPlans';
 import BudgetIA from "./BudgetIA";
 import DiagnosticRestauration from "./DiagnosticRestauration.jsx";
 import RapportPDF from "./RapportPDF.jsx";
@@ -653,6 +654,7 @@ export default function App() {
     { id: "radar",         icon: "📡", label: t("nav_radar"),            lock: !CAN.pdf(plan) },
     { id: "assistant",     icon: "🤖", label: "Assistant IA",             lock: !CAN.pdf(plan) },
     { id: "envoiargent", icon: "🌍", label: "Construire depuis l'étranger" },
+    { id: "comparateur", label: "Comparateur Plans IA", icon: "26" },
     { id: "budget",      icon: "💰", label: "Budget IA" },
     { sec: t("sec_data") },
     { id: "projets",     icon: "⬡",  label: t("nav_projets") },
@@ -1357,6 +1359,7 @@ export default function App() {
             {page === "fournisseurs" && <CarnetFournisseurs plan={plan} />}
 
             {/* ══ CHANTIER ══ */}
+            {page === "comparateur" && <ComparateurPlans />}
             {page === "budget" && <BudgetIA plan={plan} setPage={setPage} lang={lang} />}
 {page === "chantier" && <GestionChantier plan={plan} />}
               {/* PLAN 2D */}

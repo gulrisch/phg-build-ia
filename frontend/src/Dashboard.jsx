@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import ComparateurPlans from './ComparateurPlans';
 import BudgetIA from "./BudgetIA";
 import { getToken } from "./api.js";
 
