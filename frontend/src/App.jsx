@@ -15,6 +15,7 @@ import SuiviChantier from "./SuiviChantier.jsx";
 import PHGPlan2D from "./PHGPlan2D";
 import EnvoiArgent from "./EnvoiArgent.jsx";
 import DevisIA from "./DevisIA.jsx";
+import Editeur2D3D from "./Editeur2D3D.jsx";
 import PlanIA from "./PlanIA.jsx";
 
 // ── PHG BUILD IA — App complète avec plans Gratuit / Pro 12,90€/mois (77€/an) / Elite 25€/mois (210€/an) / Afrique 17€/mois (135€/an)
@@ -1374,6 +1375,7 @@ export default function App() {
             {page === "assistant" && <AssistantIA plan={plan} lang={lang} />}
             {page === "restauration" && <DiagnosticRestauration plan={plan} lang={lang} />}
             {page === "devis" && <DevisIA />}
+            {page === "editeur_ia" && <Editeur2D3D />}
             {page === "plan" && <PlanIA />}
 
             {/* ══ RAPPORT PDF ══ */}
