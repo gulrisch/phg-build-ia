@@ -14,6 +14,8 @@ import RapportPDF from "./RapportPDF.jsx";
 import SuiviChantier from "./SuiviChantier.jsx";
 import PHGPlan2D from "./PHGPlan2D";
 import EnvoiArgent from "./EnvoiArgent.jsx";
+import DevisIA from "./DevisIA.jsx";
+import PlanIA from "./PlanIA.jsx";
 
 // ── PHG BUILD IA — App complète avec plans Gratuit / Pro 12,90€/mois (77€/an) / Elite 25€/mois (210€/an) / Afrique 17€/mois (135€/an)
 const API = import.meta.env.VITE_API_URL || "https://phg-build-ia-production-9dc4.up.railway.app";
@@ -1369,6 +1371,8 @@ export default function App() {
             {page === "radar" && <PhgRadar setPage={setPage} t={t} lang={lang} />}
             {page === "assistant" && <AssistantIA plan={plan} lang={lang} />}
             {page === "restauration" && <DiagnosticRestauration plan={plan} lang={lang} />}
+            {page === "devis" && <DevisIA />}
+            {page === "plan" && <PlanIA />}
 
             {/* ══ RAPPORT PDF ══ */}
             {page === "rapport_pdf" && (
