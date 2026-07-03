@@ -3,13 +3,22 @@ import { useState, useRef, useCallback } from "react";
 // ── Constants ─────────────────────────────────────────────────────────────────
 const TODAY = new Date().toISOString().split("T")[0];
 
+// Génère une date ISO décalée de `days` jours par rapport à aujourd'hui
+// (négatif = passé, positif = futur). Évite d'avoir des dates figées en dur
+// qui finissent par montrer un chantier "en retard d'un an" selon la date d'ouverture.
+const addDays = (days) => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split("T")[0];
+};
+
 const PHASES_INIT = [
-  { id: "prep",   label: "Préparation",  seq: 1, status: "done",        pct: 100, notes: "Site installé, permis de construire obtenu.",            planned: "2025-01-15", actual: "2025-01-14", photos: [] },
-  { id: "fond",   label: "Fondations",   seq: 2, status: "done",        pct: 100, notes: "Semelles filantes coulées, réception béton effectuée.",    planned: "2025-02-10", actual: "2025-02-13", photos: [] },
-  { id: "gros",   label: "Gros œuvre",   seq: 3, status: "in_progress", pct: 65,  notes: "Murs R+1 en cours — voile béton côté nord à compléter.", planned: "2025-04-30", actual: "",           photos: [] },
-  { id: "second", label: "Second œuvre", seq: 4, status: "todo",        pct: 0,   notes: "",                                                         planned: "2025-06-15", actual: "",           photos: [] },
-  { id: "fini",   label: "Finitions",    seq: 5, status: "todo",        pct: 0,   notes: "",                                                         planned: "2025-08-15", actual: "",           photos: [] },
-  { id: "recep",  label: "Réception",    seq: 6, status: "todo",        pct: 0,   notes: "",                                                         planned: "2025-09-30", actual: "",           photos: [] },
+  { id: "prep",   label: "Préparation",  seq: 1, status: "done",        pct: 100, notes: "Site installé, permis de construire obtenu.",            planned: addDays(-100), actual: addDays(-99), photos: [] },
+  { id: "fond",   label: "Fondations",   seq: 2, status: "done",        pct: 100, notes: "Semelles filantes coulées, réception béton effectuée.",    planned: addDays(-70),  actual: addDays(-72), photos: [] },
+  { id: "gros",   label: "Gros œuvre",   seq: 3, status: "in_progress", pct: 65,  notes: "Murs R+1 en cours — voile béton côté nord à compléter.", planned: addDays(15),   actual: "",           photos: [] },
+  { id: "second", label: "Second œuvre", seq: 4, status: "todo",        pct: 0,   notes: "",                                                         planned: addDays(55),   actual: "",           photos: [] },
+  { id: "fini",   label: "Finitions",    seq: 5, status: "todo",        pct: 0,   notes: "",                                                         planned: addDays(100),  actual: "",           photos: [] },
+  { id: "recep",  label: "Réception",    seq: 6, status: "todo",        pct: 0,   notes: "",                                                         planned: addDays(130),  actual: "",           photos: [] },
 ];
 
 const STATUS_META = {

@@ -300,6 +300,17 @@ const CAN = {
   unlimitedProjects: p => p !== "free",
 };
 
+// Le backend stocke le plan en MAJUSCULES (FREE / PRO / ELITE / ELITE_AFRIQUE).
+// Le front (CAN, demoMode, etc.) compare toujours en minuscules ("free" / "pro" / "elite").
+// Cette fonction est le point de passage OBLIGÉ chaque fois qu'on reçoit un plan du serveur.
+const normalizePlan = (rawPlan) => {
+  if (!rawPlan) return "free";
+  const p = String(rawPlan).toLowerCase();
+  if (p.startsWith("elite")) return "elite"; // couvre "elite" et "elite_afrique"
+  if (p === "pro") return "pro";
+  return "free";
+};
+
 export default function App() {
   const [page, setPage] = useState("accueil");
   const [planReal, setPlan] = useState("free");
@@ -320,6 +331,32 @@ export default function App() {
   const [authError, setAuthError]       = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  // Relit le vrai statut d'abonnement depuis le serveur et resynchronise planReal.
+  // Utilisée : (1) au chargement de l'app si une session existe déjà, (2) au retour de Stripe Checkout.
+  const syncPlanFromServer = useCallback(async () => {
+    const currentToken = localStorage.getItem("phg_token");
+    if (!currentToken) return;
+    try {
+      const res = await fetch(`${API}/auth/me`, {
+        headers: { "Authorization": `Bearer ${currentToken}` },
+      });
+      if (res.status === 401) {
+        localStorage.clear();
+        setToken(null);
+        setUser(null);
+        setPlan("free");
+        return;
+      }
+      if (!res.ok) return;
+      const me = await res.json();
+      setPlan(normalizePlan(me.plan));
+      setUser(me);
+      localStorage.setItem("phg_user", JSON.stringify(me));
+    } catch {
+      // silencieux : pas de connexion / backend indisponible, on garde l'état courant
+    }
+  }, []);
+
   // Clear state and show login whenever any API call fires phg:logout (e.g. stale token after SECRET_KEY rotation)
   useEffect(() => {
     const handler = () => {
@@ -336,6 +373,13 @@ export default function App() {
     return () => window.removeEventListener("phg:logout", handler);
   }, []);
 
+  // Au chargement : si une session existe déjà (token en localStorage), on relit le vrai
+  // plan depuis le serveur. Avant ce fix, planReal repartait de "free" à chaque refresh
+  // même pour un abonné PRO/ELITE déjà connecté.
+  useEffect(() => {
+    if (localStorage.getItem("phg_token")) syncPlanFromServer();
+  }, [syncPlanFromServer]);
+
   // ── Retour Stripe Checkout ────────────────────────────────────────────────
   const [checkoutStatus, setCheckoutStatus] = useState(null); // "success" | "cancelled" | null
   useEffect(() => {
@@ -346,11 +390,16 @@ export default function App() {
       setCheckoutStatus({ ok: true, plan: planBack });
       setPage("abonnement");
       window.history.replaceState({}, "", "/");
+      // Le webhook Stripe (checkout.session.completed) peut mettre 1-2s à traiter
+      // côté backend avant que la souscription soit visible via /auth/me.
+      // On relit tout de suite, puis on retente une fois après un court délai.
+      syncPlanFromServer();
+      setTimeout(syncPlanFromServer, 3000);
     } else if (status === "cancelled") {
       setCheckoutStatus({ ok: false });
       window.history.replaceState({}, "", "/");
     }
-  }, []);
+  }, [syncPlanFromServer]);
 
   const generatePassword = () => {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
@@ -364,6 +413,7 @@ export default function App() {
     localStorage.setItem("phg_user",  JSON.stringify(userData));
     setToken(token);
     setUser(userData);
+    setPlan(normalizePlan(userData?.plan)); // ← FIX : jusqu'ici jamais appelé, planReal restait bloqué sur "free"
     setAuthModal(false);
     setAuthError("");
     if (pendingPlan) {

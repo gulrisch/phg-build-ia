@@ -269,7 +269,7 @@ export default function DevisIA() {
 
     try {
       const formData = new FormData();
-      if (pdfFile) formData.append("pdf_devis", pdfFile);
+      if (pdfFile) formData.append("devis", pdfFile);
       photos.forEach((p) => formData.append("photos", p));
 
       const res = await fetch(`${API_BASE}/devis/analyser`, {
