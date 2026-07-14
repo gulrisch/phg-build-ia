@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { getToken } from "./api";
 
 const API_BASE = "https://phg-build-ia-production-9dc4.up.railway.app";
 
@@ -245,12 +246,20 @@ const styles = {
   },
 };
 
+// Convertit un score_fiabilite (0-100) renvoyé par le backend en note A/B/C/D pour l'affichage
+function scoreToNote(score) {
+  if (score >= 80) return "A";
+  if (score >= 60) return "B";
+  if (score >= 40) return "C";
+  return "D";
+}
+
 export default function DevisIA() {
   const [pdfFile, setPdfFile] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [resultat, setResultat] = useState(null);
-  const [rapportB64, setRapportB64] = useState(null);
   const [error, setError] = useState(null);
   const [pdfDragOver, setPdfDragOver] = useState(false);
   const [photoDragOver, setPhotoDragOver] = useState(false);
@@ -259,8 +268,8 @@ export default function DevisIA() {
   const photoInputRef = useRef();
 
   const analyser = async () => {
-    if (!pdfFile && photos.length === 0) {
-      setError("Veuillez uploader un devis PDF ou des photos.");
+    if (!pdfFile) {
+      setError("Veuillez uploader un devis PDF.");
       return;
     }
     setLoading(true);
@@ -269,7 +278,7 @@ export default function DevisIA() {
 
     try {
       const formData = new FormData();
-      if (pdfFile) formData.append("devis", pdfFile);
+      formData.append("devis", pdfFile);
       photos.forEach((p) => formData.append("photos", p));
 
       const res = await fetch(`${API_BASE}/devis/analyser`, {
@@ -277,23 +286,72 @@ export default function DevisIA() {
         body: formData,
       });
 
-      if (!res.ok) throw new Error(`Erreur serveur : ${res.status}`);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || `Erreur serveur : ${res.status}`);
+      }
+
       const data = await res.json();
-      setResultat(data.analyse);
-      if (data.rapport_pdf_b64) setRapportB64(data.rapport_pdf_b64);
+      // Le backend renvoie directement les champs à plat (pas dans data.analyse)
+      setResultat(data);
     } catch (err) {
-      setError("Erreur lors de l'analyse. Vérifiez votre connexion ou réessayez.");
+      setError(err.message || "Erreur lors de l'analyse. Vérifiez votre connexion ou réessayez.");
     } finally {
       setLoading(false);
     }
   };
 
-  const telechargerRapport = () => {
-    if (!rapportB64) return;
-    const link = document.createElement("a");
-    link.href = `data:application/pdf;base64,${rapportB64}`;
-    link.download = "rapport-devis-phg.pdf";
-    link.click();
+  const telechargerRapport = async () => {
+    if (!resultat) return;
+    setPdfLoading(true);
+    setError(null);
+
+    try {
+      const token = getToken();
+      if (!token) {
+        setError("Connectez-vous avec un compte Pro ou Élite pour télécharger le rapport PDF.");
+        setPdfLoading(false);
+        return;
+      }
+
+      const res = await fetch(`${API_BASE}/devis/rapport-pdf`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          resume: resultat.resume,
+          prix_abusifs: resultat.prix_abusifs || [],
+          postes_manquants: resultat.postes_manquants || [],
+          recommandations: resultat.recommandations || [],
+          score_fiabilite: resultat.score_fiabilite,
+          rapport_complet: resultat.rapport_complet,
+          nom_fichier_devis: pdfFile ? pdfFile.name : "Devis",
+        }),
+      });
+
+      if (res.status === 402) {
+        setError("Le rapport PDF est réservé aux abonnés Pro ou Élite.");
+        return;
+      }
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || `Erreur serveur : ${res.status}`);
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "rapport-devis-phg.pdf";
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message || "Erreur lors du téléchargement du rapport.");
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   const handleDrop = (e, type) => {
@@ -323,7 +381,7 @@ export default function DevisIA() {
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .upload-card:hover { border-color: #C9A84C !important; background: rgba(201,168,76,0.05) !important; }
         .btn-analyse:hover:not(:disabled) { background: #d4af5a !important; }
-        .btn-dl:hover { background: rgba(201,168,76,0.1) !important; }
+        .btn-dl:hover:not(:disabled) { background: rgba(201,168,76,0.1) !important; }
         .resultat-section { animation: fadeIn 0.4s ease; }
       `}</style>
 
@@ -425,35 +483,46 @@ export default function DevisIA() {
           <div style={styles.noteGrid}>
             <div style={styles.statCard}>
               <div style={{ display: "flex", justifyContent: "center", marginBottom: "6px" }}>
-                <div style={styles.noteTag(resultat.note_globale)}>
-                  {resultat.note_globale}
+                <div style={styles.noteTag(scoreToNote(resultat.score_fiabilite))}>
+                  {scoreToNote(resultat.score_fiabilite)}
                 </div>
               </div>
-              <span style={{ ...styles.statLbl }}>{getNoteLabel(resultat.note_globale)}</span>
+              <span style={{ ...styles.statLbl }}>{getNoteLabel(scoreToNote(resultat.score_fiabilite))}</span>
             </div>
             <div style={styles.statCard}>
               <span style={styles.statVal}>
-                {Number(resultat.montant_total || 0).toLocaleString("fr-FR")}€
+                {resultat.score_fiabilite}/100
               </span>
-              <span style={styles.statLbl}>Montant total</span>
+              <span style={styles.statLbl}>Score de fiabilité</span>
             </div>
             <div style={styles.statCard}>
               <span style={{ ...styles.statVal, color: "#28a745" }}>
-                {Number(resultat.economie_potentielle || 0).toLocaleString("fr-FR")}€
+                {resultat.prix_abusifs?.length || 0}
               </span>
-              <span style={styles.statLbl}>Économie potentielle</span>
+              <span style={styles.statLbl}>Prix suspects</span>
             </div>
           </div>
 
-          {/* Prix suspects */}
-          {resultat.prix_suspects?.length > 0 && (
+          {/* Résumé */}
+          {resultat.resume && (
             <div style={styles.resultatCard}>
-              <div style={styles.sectionTitle}>⚠️ Prix suspects détectés</div>
-              {resultat.prix_suspects.map((item, i) => (
+              <div style={styles.sectionTitle}>📝 Résumé</div>
+              <div style={styles.conclusion}>{resultat.resume}</div>
+            </div>
+          )}
+
+          {/* Prix abusifs */}
+          {resultat.prix_abusifs?.length > 0 && (
+            <div style={styles.resultatCard}>
+              <div style={styles.sectionTitle}>⚠️ Prix abusifs détectés</div>
+              {resultat.prix_abusifs.map((item, i) => (
                 <div key={i} style={styles.alertItem}>
-                  <span style={styles.alertMontant}>{Number(item.montant || 0).toLocaleString("fr-FR")}€</span>
+                  <span style={styles.alertMontant}>
+                    {item.prix_indique} (marché : {item.prix_normal})
+                    {item.ecart_percent ? ` · +${item.ecart_percent}%` : ""}
+                  </span>
                   <div style={styles.alertPoste}>{item.poste}</div>
-                  <div style={styles.alertRaison}>{item.raison}</div>
+                  <div style={styles.alertRaison}>{item.explication}</div>
                 </div>
               ))}
             </div>
@@ -464,7 +533,12 @@ export default function DevisIA() {
             <div style={styles.resultatCard}>
               <div style={styles.sectionTitle}>📋 Postes manquants</div>
               {resultat.postes_manquants.map((poste, i) => (
-                <div key={i} style={styles.warningItem}>✦ {poste}</div>
+                <div key={i} style={styles.warningItem}>
+                  ✦ <strong>{poste.poste}</strong>
+                  {poste.importance ? ` (${poste.importance})` : ""}
+                  {poste.cout_estime ? ` — ${poste.cout_estime}` : ""}
+                  {poste.explication ? ` · ${poste.explication}` : ""}
+                </div>
               ))}
             </div>
           )}
@@ -479,24 +553,22 @@ export default function DevisIA() {
             </div>
           )}
 
-          {/* Conclusion */}
-          {resultat.conclusion && (
-            <div style={styles.resultatCard}>
-              <div style={styles.sectionTitle}>📝 Conclusion</div>
-              <div style={styles.conclusion}>{resultat.conclusion}</div>
-            </div>
-          )}
-
-          {/* Bouton télécharger rapport */}
-          {rapportB64 && (
-            <button
-              className="btn-dl"
-              style={styles.btnDownload}
-              onClick={telechargerRapport}
-            >
-              📥 Télécharger le rapport PDF
-            </button>
-          )}
+          {/* Bouton télécharger rapport PDF (réservé Pro/Élite) */}
+          <button
+            className="btn-dl"
+            style={{ ...styles.btnDownload, ...(pdfLoading ? styles.btnDisabled : {}) }}
+            onClick={telechargerRapport}
+            disabled={pdfLoading}
+          >
+            {pdfLoading ? (
+              <>
+                <div style={styles.spin} />
+                Génération du PDF...
+              </>
+            ) : (
+              <>📥 Télécharger le rapport PDF</>
+            )}
+          </button>
         </div>
       )}
     </div>
